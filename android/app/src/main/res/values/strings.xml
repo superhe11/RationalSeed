@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Рациональное зерно</string>
+    <string name="title_activity_main">Рациональное зерно</string>
+    <string name="package_name">by.superhell.rationalseed</string>
+    <string name="custom_url_scheme">by.superhell.rationalseed</string>
+</resources>
