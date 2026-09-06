@@ -1,13 +1,13 @@
 {
-    "contentCode":  13,
-    "versionName":  "1.9.1",
+    "contentCode":  14,
+    "versionName":  "1.9.2",
     "runtimeVersion":  "android-2",
-    "publishedAt":  "2026-09-06T13:25:49.4115660Z",
+    "publishedAt":  "2026-09-06T13:52:50.1733991Z",
     "notes":  [
-                  "Исправление переходов между главами и текста сцен.",
-                  "Отображение точного размера обновления."
+                  "Новая иконка Android-приложения.",
+                  "Уточнение размера полного пакета обновления."
               ],
-    "bundleUrl":  "https://github.com/superhe11/RationalSeed/releases/download/v1.9.1/novel-1.9.1-13.zip",
-    "sha256":  "f4adc326696ea494a2e395b6bf2a3d0236d44a266ce02d77348324fbfb4377ee",
-    "sizeBytes":  2144817
+    "bundleUrl":  "https://github.com/superhe11/RationalSeed/releases/download/v1.9.2/novel-1.9.2-14.zip",
+    "sha256":  "5d7be5eb6cb20e1447e0da9d69fa580d66b1473f5d50811d59828dd8922e63e9",
+    "sizeBytes":  299479
 }
