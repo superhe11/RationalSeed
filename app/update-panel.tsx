@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { checkRelease, installRelease, isAndroidApp, release, type AppRelease } from "./updates";
+import { checkRelease, formatUpdateSize, installRelease, isAndroidApp, release, type AppRelease } from "./updates";
 import { App } from "@capacitor/app";
 import { flushSaves } from "./device-storage";
 import releaseHistory from "./release-history.json";
@@ -72,7 +72,7 @@ export function UpdatePanel({ updates }: { updates: ReturnType<typeof useUpdates
       <h3>Новая версия {latest.versionName}</h3>
       <ul className="patch-notes">{latest.notes.map(note => <li key={note}>{note}</li>)}</ul>
       {incompatible ? <p>Для этой версии нужна новая Android-оболочка. Получите новый APK у автора и установите поверх текущего приложения, не удаляя его.</p> : isAndroidApp() ? <>
-        <p className="panel-intro">{(latest.sizeBytes / 1024 / 1024).toFixed(1)} МБ · После загрузки игра перезапустится. Сохранения останутся.</p>
+        <p className="panel-intro">{formatUpdateSize(latest.sizeBytes)} · После загрузки игра перезапустится. Сохранения останутся.</p>
         <button className="primary-button" disabled={installing} onClick={() => void updates.install()}>{installing ? `Обновление · ${percent}%` : "Скачать и обновить"}</button>
       </> : <p>В браузере достаточно обновить страницу. В Android-приложении новая версия устанавливается прямо здесь.</p>}
     </> : <><h3>Что изменилось в {release.versionName}</h3><ul className="patch-notes">{release.notes.map(note => <li key={note}>{note}</li>)}</ul></>}

@@ -6,6 +6,11 @@ export { release };
 export const isAndroidApp = () => Capacitor.getPlatform() === "android";
 export type AppRelease = { contentCode: number; versionName: string; runtimeVersion: string; notes: string[]; bundleUrl: string; sha256: string; publishedAt: string; sizeBytes: number };
 
+export function formatUpdateSize(sizeBytes: number) {
+  const megabytes = sizeBytes / 1024 / 1024;
+  return `${megabytes.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} МБ (${sizeBytes.toLocaleString("ru-RU")} байт)`;
+}
+
 export function validateRelease(value: unknown): AppRelease {
   if (typeof value === "string") {
     try { value = JSON.parse(value.replace(/^\uFEFF/, "")); }

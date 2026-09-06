@@ -1,8 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { checkRelease, validateRelease, release } from "../app/updates.ts";
+import { checkRelease, formatUpdateSize, validateRelease, release } from "../app/updates.ts";
 
 const manifest = { contentCode: 99, versionName: "9.0.0", runtimeVersion: release.runtimeVersion, notes: ["Проверка"], bundleUrl: `${release.updateOrigin}/releases/test.zip`, sha256: "a".repeat(64), publishedAt: new Date().toISOString(), sizeBytes: 1000 };
+test("update size preserves two decimal places and the exact manifest byte count", () => {
+  assert.equal(formatUpdateSize(2144678), "2,05 МБ (2 144 678 байт)");
+});
 test("native string JSON and BOM are accepted, HTML/login pages are rejected", () => {
   assert.deepEqual(validateRelease(JSON.stringify(manifest)), manifest);
   assert.deepEqual(validateRelease('\uFEFF' + JSON.stringify(manifest)), manifest);

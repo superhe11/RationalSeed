@@ -1,13 +1,13 @@
 {
-    "contentCode":  12,
-    "versionName":  "1.9.0",
+    "contentCode":  13,
+    "versionName":  "1.9.1",
     "runtimeVersion":  "android-2",
-    "publishedAt":  "2026-09-06T13:09:01.3082057Z",
+    "publishedAt":  "2026-09-06T13:25:49.4115660Z",
     "notes":  [
-                  "Добавление достижений и новых сюжетных маршрутов.",
-                  "Расширение ветвления и количества сцен."
+                  "Исправление переходов между главами и текста сцен.",
+                  "Отображение точного размера обновления."
               ],
-    "bundleUrl":  "https://github.com/superhe11/RationalSeed/releases/download/v1.9.0/novel-1.9.0-12.zip",
-    "sha256":  "86c9b8e9be9bad2fe8172b7bb35c2a30554c1bd2848390e9393b15e83f669739",
-    "sizeBytes":  2144678
+    "bundleUrl":  "https://github.com/superhe11/RationalSeed/releases/download/v1.9.1/novel-1.9.1-13.zip",
+    "sha256":  "f4adc326696ea494a2e395b6bf2a3d0236d44a266ce02d77348324fbfb4377ee",
+    "sizeBytes":  2144817
 }

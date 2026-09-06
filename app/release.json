@@ -1,13 +1,13 @@
 {
-  "versionCode": 11,
-  "contentCode": 12,
+  "versionCode": 12,
+  "contentCode": 13,
   "runtimeVersion": "android-2",
-  "versionName": "1.9.0",
+  "versionName": "1.9.1",
   "githubRepository": "superhe11/RationalSeed",
   "updateManifestUrl": "https://raw.githubusercontent.com/superhe11/RationalSeed/updates/latest.json",
   "updateOrigin": "https://rational-seed-novel.workspace-vo-3629.chatgpt.site",
   "notes": [
-    "Добавление достижений и новых сюжетных маршрутов.",
-    "Расширение ветвления и количества сцен."
+    "Исправление переходов между главами и текста сцен.",
+    "Отображение точного размера обновления."
   ]
 }
