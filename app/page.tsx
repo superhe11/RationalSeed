@@ -12,6 +12,7 @@ import { IntroNotice } from "./intro-notice";
 import {
   branchCount,
   chapterCount,
+  choiceLockReason,
   choiceCount,
   chooseEnding,
   endingNodes,
@@ -191,6 +192,7 @@ export default function Home() {
   }, [endingId, node, stats]);
 
   const selectChoice = useCallback((choice: Choice) => {
+    if (choiceLockReason(stats, choice)) return;
     const nextStats = updateStats(stats, choice);
     setStats(nextStats);
     setHistory((items) => [...items, node.id]);
@@ -304,7 +306,7 @@ export default function Home() {
 
           </div>
 
-          <section key={node.id} className={`dialogue ${node.choices ? "has-choices" : ""}`} aria-live="polite">
+          <section key={node.id} className={`dialogue ${node.choices ? "has-choices" : ""} ${node.reading ? "reading-passage" : ""}`} aria-live="polite">
             <div className="speaker-row">
               <span className="speaker">{node.speaker}</span>
               <span className="node-count">{String(history.length + 1).padStart(2, "0")}</span>
@@ -314,13 +316,14 @@ export default function Home() {
 
             {node.choices ? (
               <div className="choices">
-                {node.choices.map((choice, index) => (
-                  <button key={choice.label} onClick={() => selectChoice(choice)}>
+                {node.choices.map((choice, index) => {
+                  const lockReason = choiceLockReason(stats, choice);
+                  return <button key={choice.label} className={lockReason ? "choice-locked" : undefined} disabled={Boolean(lockReason)} onClick={() => selectChoice(choice)}>
                     <span className="choice-index">0{index + 1}</span>
-                    <span className="choice-copy"><b>{choice.label}</b><small>{choice.consequence}</small></span>
+                    <span className="choice-copy"><b>{choice.label}</b><small>{lockReason ?? choice.consequence}</small></span>
                     <span className="choice-arrow" aria-hidden="true">→</span>
-                  </button>
-                ))}
+                  </button>;
+                })}
               </div>
             ) : isEnding ? (
               <div className="ending-actions">
@@ -329,7 +332,7 @@ export default function Home() {
                 <button className="text-button" onClick={() => setStarted(false)}>На титульный экран</button>
               </div>
             ) : (
-              <button className="continue" onClick={advance}>продолжить <span>Enter ↵</span></button>
+              <button className="continue" onClick={advance}>{node.continueLabel ?? "продолжить"} <span>Enter ↵</span></button>
             )}
           </section>
         </>

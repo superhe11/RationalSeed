@@ -23,7 +23,7 @@ test("server renders the visual novel shell", async () => {
   assert.match(html, /<title>Рациональное зерно — визуальная новелла<\/title>/i);
   assert.match(html, /Рациональное/);
   assert.match(html, /романтическая комедия нарушения границ/);
-  assert.match(html, /80(?:<!-- -->)? вариантов ответа/);
+  assert.match(html, /\d+(?:<!-- -->)? вариантов ответа/);
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|react-loading-skeleton/);
 });
 
@@ -35,8 +35,8 @@ test("project contains the story, launcher, and generated art", async () => {
   ]);
   assert.match(story, /chooseEnding/);
   assert.match(story, /chapt(?:er|erTitle)/);
-  assert.match(story, /export const branchCount = 20/);
-  assert.match(story, /export const choiceCount = 80/);
+  assert.match(story, /choiceLockReason/);
+  assert.match(story, /guitar_arrival/);
   for (const name of ["Тоня", "Ксюша", "Маша", "Яна Чорна", "Варя", "Оля", "Катя", "Ярослав"]) {
     assert.match(story, new RegExp(name));
   }

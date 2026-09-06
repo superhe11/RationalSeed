@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { emptyLibrary, freshGame, LIBRARY_KEY, LEGACY_KEY, readLibrary, routeProgress, snapshot, validateSave, withAutosave, writeLibrary } from "../app/saves.ts";
-import { branchCount, choiceCount, chooseEnding, endingNodes, story } from "../app/story.ts";
+import { branchCount, choiceCount, choiceLockReason, chooseEnding, endingNodes, story } from "../app/story.ts";
 import { release, validateRelease } from "../app/updates.ts";
 
 const storage = data => ({ getItem: key => data[key] ?? null });
@@ -73,7 +73,7 @@ test("corrupt JSON and denied storage do not crash the game", () => {
   assert.equal(writeLibrary({ setItem() { throw new Error("quota"); } }, emptyLibrary()), false);
 });
 
-test("all nodes and all four endings remain reachable; every choice has a valid target", () => {
+test("all nodes and endings remain reachable; every choice has a valid target", () => {
   const choices = Object.values(story).flatMap(node => node.choices ?? []);
   assert.equal(choices.length, choiceCount);
   assert.equal(Object.values(story).filter(node => node.choices).length, branchCount);
@@ -88,12 +88,19 @@ test("all nodes and all four endings remain reachable; every choice has a valid 
     for (const edge of node.choices ?? [{ next: node.next, delta: {} }]) {
       const stats = Object.fromEntries(Object.entries(game.stats).map(([key, value]) => [key, Math.max(0, Math.min(10, value + (edge.delta[key] ?? 0)))]));
       if (edge.next === "resolve") { endings.add(chooseEnding(stats)); continue; }
+      if (edge.next.startsWith("ending:")) { endings.add(edge.next.slice(7)); continue; }
       assert.ok(story[edge.next], `${node.id} -> ${edge.next}`);
       queue.push({ ...game, stats, nodeId: edge.next });
     }
   }
   assert.equal(nodes.size, Object.keys(story).length);
   assert.deepEqual([...endings].sort(), Object.keys(endingNodes).sort());
+});
+
+test("late restorative choice stays closed until the stats support it", () => {
+  const resetChoice = story.last_sheet.choices[0];
+  assert.ok(choiceLockReason({ boundaries: 3, selfControl: 4, pressure: 7 }, resetChoice));
+  assert.equal(choiceLockReason({ boundaries: 8, selfControl: 7, pressure: 4 }, resetChoice), undefined);
 });
 
 const validRelease = () => ({ contentCode: 3, versionName: "1.2.0", runtimeVersion: "android-2", notes: ["Исправление"], bundleUrl: `${release.updateOrigin}/releases/novel-1.2.0-3.zip`, sha256: "a".repeat(64), publishedAt: "2026-09-05T20:00:00Z", sizeBytes: 2000 });
