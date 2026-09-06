@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 $projectDir = Split-Path $PSScriptRoot -Parent
 Set-Location -LiteralPath $projectDir
-$release = Get-Content -Raw -LiteralPath (Join-Path $projectDir 'app/release.json') | ConvertFrom-Json
+$release = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $projectDir 'app/release.json') | ConvertFrom-Json
 if ($release.versionName -notmatch '^\d+\.\d+\.\d+$' -or $release.contentCode -lt 1) { throw 'Invalid release version.' }
 
 & npm.cmd run mobile:web

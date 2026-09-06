@@ -3,13 +3,33 @@ import { endingNodes, initialStats, story, type StoryStats } from "./story.ts";
 export const LIBRARY_KEY = "rational-seed-library-v1";
 export const LEGACY_KEY = "rational-seed-save-v3";
 export const SLOT_COUNT = 6;
-export type SaveState = { nodeId: string; stats: StoryStats; history: string[]; endingId?: string };
+export type SaveState = { nodeId: string; stats: StoryStats; history: string[]; decisions?: string[]; endingId?: string };
 export type SavedGame = SaveState & { savedAt: string };
-export type Library = { schema: 1; auto: SavedGame | null; slots: (SavedGame | null)[]; unlocked: string[] };
+export type Library = { schema: 1; auto: SavedGame | null; slots: (SavedGame | null)[]; unlocked: string[]; visited: string[]; decisions: string[] };
 type StorageReader = Pick<Storage, "getItem">;
-export const freshGame = (): SaveState => ({ nodeId: "prologue", stats: { ...initialStats }, history: [] });
-export const emptyLibrary = (): Library => ({ schema: 1, auto: null, slots: Array(SLOT_COUNT).fill(null), unlocked: [] });
+export const freshGame = (): SaveState => ({ nodeId: "prologue", stats: { ...initialStats }, history: [], decisions: [] });
+export const emptyLibrary = (): Library => ({ schema: 1, auto: null, slots: Array(SLOT_COUNT).fill(null), unlocked: [], visited: [], decisions: [] });
 const owns = (object: object, key: unknown): key is string => typeof key === "string" && Object.hasOwn(object, key);
+
+export function validDecision(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  const [id, index, extra] = value.split(":");
+  return extra === undefined && owns(story, id) && /^\d+$/.test(index) && Boolean(story[id].choices?.[Number(index)]);
+}
+
+export function routeProgress(save: SaveState): { visited: string[]; decisions: string[] } {
+  const path = [...save.history, ...(save.endingId ? [] : [save.nodeId])];
+  const decisions = new Set((save.decisions ?? []).filter(validDecision));
+  path.forEach((id, position) => {
+    const choices = story[id]?.choices;
+    if (!choices) return;
+    const next = path[position + 1] ?? (save.endingId ? `ending:${save.endingId}` : null);
+    const matches = choices.flatMap((choice, index) => choice.next === next ? [index] : []);
+    // Never guess an old final choice when several answers shared "resolve".
+    if (matches.length === 1) decisions.add(`${id}:${matches[0]}`);
+  });
+  return { visited: [...new Set([...path, save.nodeId])], decisions: [...decisions] };
+}
 
 export function validateSave(value: unknown): SaveState | null {
   if (!value || typeof value !== "object") return null;
@@ -17,11 +37,12 @@ export function validateSave(value: unknown): SaveState | null {
   if (!owns(story, save.nodeId) || (save.endingId !== undefined && !owns(endingNodes, save.endingId))) return null;
   if (!save.stats || ![save.stats.boundaries, save.stats.selfControl, save.stats.pressure].every(n => Number.isInteger(n) && n >= 0 && n <= 10)) return null;
   if (!Array.isArray(save.history) || save.history.length > 1000 || !save.history.every(id => owns(story, id))) return null;
-  return { nodeId: save.nodeId, stats: { ...save.stats }, history: [...save.history], ...(save.endingId ? { endingId: save.endingId } : {}) };
+  if (save.decisions !== undefined && (!Array.isArray(save.decisions) || !save.decisions.every(validDecision))) return null;
+  return { nodeId: save.nodeId, stats: { ...save.stats }, history: [...save.history], decisions: save.decisions ? [...save.decisions] : [], ...(save.endingId ? { endingId: save.endingId } : {}) };
 }
 
 export function snapshot(save: SaveState, now = new Date().toISOString()): SavedGame {
-  return { ...save, stats: { ...save.stats }, history: [...save.history], savedAt: now };
+  return { ...save, stats: { ...save.stats }, history: [...save.history], decisions: [...(save.decisions ?? [])], savedAt: now };
 }
 
 function savedGame(value: unknown): SavedGame | null {
@@ -41,9 +62,16 @@ export function readLibrary(storage: StorageReader): { library: Library; warning
       library.auto = savedGame(data.auto);
       library.slots = Array.from({ length: SLOT_COUNT }, (_, i) => savedGame(data.slots[i]));
       library.unlocked = [...new Set<string>(data.unlocked.filter((id: unknown) => owns(endingNodes, id)))];
+      library.visited = Array.isArray(data.visited) ? data.visited.filter((id: unknown) => owns(story, id)) : [];
+      library.decisions = Array.isArray(data.decisions) ? data.decisions.filter(validDecision) : [];
       // A save loaded from an older version may already contain a completed ending.
       for (const save of [library.auto, ...library.slots]) {
         if (save?.endingId && !library.unlocked.includes(save.endingId)) library.unlocked.push(save.endingId);
+        if (save) {
+          const progress = routeProgress(save);
+          library.visited = [...new Set([...library.visited, ...progress.visited])];
+          library.decisions = [...new Set([...library.decisions, ...progress.decisions])];
+        }
       }
       const damaged = (data.auto && !library.auto) || data.slots.some((s: unknown, i: number) => s && i < SLOT_COUNT && !library.slots[i]);
       return { library, ...(damaged ? { warning: "Повреждённый слот пропущен. Остальные сохранения доступны." } : {}) };
@@ -53,6 +81,9 @@ export function readLibrary(storage: StorageReader): { library: Library; warning
       library.auto = savedGame(JSON.parse(legacy));
       if (!library.auto) throw new Error("Invalid legacy save");
       if (library.auto.endingId) library.unlocked.push(library.auto.endingId);
+      const progress = routeProgress(library.auto);
+      library.visited = progress.visited;
+      library.decisions = progress.decisions;
     }
     return { library };
   } catch {
@@ -62,7 +93,8 @@ export function readLibrary(storage: StorageReader): { library: Library; warning
 
 export function withAutosave(library: Library, save: SaveState): Library {
   const unlocked = save.endingId ? [...new Set([...library.unlocked, save.endingId])] : library.unlocked;
-  return { ...library, auto: snapshot(save), unlocked };
+  const progress = routeProgress(save);
+  return { ...library, auto: snapshot(save), unlocked, visited: [...new Set([...library.visited, ...progress.visited])], decisions: [...new Set([...library.decisions, ...progress.decisions])] };
 }
 
 export function writeLibrary(storage: Pick<Storage, "setItem">, library: Library): boolean {
@@ -74,4 +106,6 @@ export const endingHints: Record<string, string> = {
   pause: "Начать меняться, но оставить себе лазейку назад.",
   protocol: "Довести поиск взаимности до системы и продолжать улучшать её вместо себя.",
   exposed: "Максимум давления, минимум уважения к границам. Остальные наконец сравнят заметки.",
+  stage_music: "Дойти до университетского вечера и оставить чужую личную жизнь за пределами сцены.",
+  stage_empty: "Превратить выступление в публичное выяснение отношений и потерять аудиторию.",
 };

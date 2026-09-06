@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { endingNodes, story } from "./story";
 import { endingHints, type Library, type SavedGame, type SaveState } from "./saves";
+import { RouteMap } from "./route-map";
 
-export type Panel = "menu" | "saves" | "endings" | "updates";
-const panelLabels: Record<Panel, string> = { menu: "Меню", saves: "Сохранения", endings: "Концовки", updates: "Обновления" };
+export type Panel = "menu" | "saves" | "map" | "endings" | "updates";
+const panelLabels: Record<Panel, string> = { menu: "Меню", saves: "Сохранения", map: "Карта", endings: "Концовки", updates: "Обновления" };
 type Props = {
   panel: Panel; onPanel: (panel: Panel) => void; onClose: () => void;
-  library: Library; canSave: boolean; onLoad: (save: SaveState) => void;
+  library: Library; currentSave: SaveState; canSave: boolean; onLoad: (save: SaveState) => void;
   onSave: (index: number) => void; onDelete: (index: number) => void;
   onReset: () => void; onTitle: () => void; soundOn: boolean; onSound: () => void;
   showHud: boolean; onHud: () => void; locked: boolean; updateContent: ReactNode;
@@ -66,7 +67,7 @@ export function GamePanel(props: Props) {
           <h3>{viewing.chapterTitle}</h3><p className="dialogue-text">{viewing.text}</p><p className="aside">{viewing.aside}</p>
           <p className="panel-footnote">Это перечитывание. Ваш текущий прогресс не изменён.</p>
         </article> : <>
-          <p className="panel-intro">Открыто {props.library.unlocked.length} из 4. Новая игра не сбрасывает коллекцию.</p>
+          <p className="panel-intro">Открыто {props.library.unlocked.length} из {Object.keys(endingNodes).length}. Новая игра не сбрасывает коллекцию.</p>
           <div className="ending-grid">{Object.entries(endingNodes).map(([id, ending], i) => {
             const unlocked = props.library.unlocked.includes(id);
             return <article key={id} className={`ending-card ${unlocked ? "unlocked" : "locked"}`}>
@@ -77,6 +78,7 @@ export function GamePanel(props: Props) {
             </article>;
           })}</div>
         </>)}
+        {props.panel === "map" && <RouteMap library={props.library} current={props.currentSave} hasRun={props.canSave} />}
         {props.panel === "updates" && props.updateContent}
       </>}
       <p className="panel-status" role="status">{status}</p>

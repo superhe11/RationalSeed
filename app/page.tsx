@@ -8,6 +8,7 @@ import { UpdatePanel, useUpdates } from "./update-panel";
 import { markAppReady, release } from "./updates";
 import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
+import { IntroNotice } from "./intro-notice";
 import {
   branchCount,
   chapterCount,
@@ -85,14 +86,16 @@ export default function Home() {
   const [endingId, setEndingId] = useState<string | undefined>();
   const [stats, setStats] = useState<StoryStats>(initialStats);
   const [history, setHistory] = useState<string[]>([]);
+  const [decisions, setDecisions] = useState<string[]>([]);
   const [soundOn, setSoundOn] = useState(false);
   const [showHud, setShowHud] = useState(true);
   const [ready, setReady] = useState(false);
+  const [introAccepted, setIntroAccepted] = useState(false);
   const [library, setLibrary] = useState<Library>(emptyLibrary);
   const libraryRef = useRef(library);
   const [notice, setNotice] = useState("");
   const [panel, setPanel] = useState<Panel | null>(null);
-  const updates = useUpdates(ready, () => setPanel("updates"));
+  const updates = useUpdates(ready && introAccepted, () => setPanel("updates"));
   const ambience = useRef<ReturnType<typeof createAmbience>>(null);
 
   const commitLibrary = useCallback((next: Library) => {
@@ -105,6 +108,7 @@ export default function Home() {
     setNodeId(saved.nodeId);
     setStats(saved.stats);
     setHistory(saved.history);
+    setDecisions(saved.decisions ?? []);
     setEndingId(saved.endingId);
     setStarted(true);
     setPanel(null);
@@ -127,6 +131,7 @@ export default function Home() {
         setNodeId(saved.nodeId);
         setStats(saved.stats);
         setHistory(saved.history);
+        setDecisions(saved.decisions ?? []);
         setEndingId(saved.endingId);
       }
       setReady(true);
@@ -140,8 +145,8 @@ export default function Home() {
 
   useEffect(() => {
     if (!ready || !started) return;
-    commitLibrary(withAutosave(libraryRef.current, { nodeId, stats, history, endingId }));
-  }, [endingId, history, nodeId, started, stats, ready, commitLibrary]);
+    commitLibrary(withAutosave(libraryRef.current, { nodeId, stats, history, decisions, endingId }));
+  }, [endingId, history, decisions, nodeId, started, stats, ready, commitLibrary]);
 
   useEffect(() => {
     if (!ready) return;
@@ -158,16 +163,22 @@ export default function Home() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     const listener = App.addListener("backButton", () => {
+      if (!introAccepted) { setIntroAccepted(true); return; }
       if (updates.installing) return;
       if (panel) setPanel(null);
       else if (started) setPanel("menu");
       else void flushSaves().then(() => App.exitApp()).catch(() => setNotice("Сохранение ещё не записано. Проверьте свободное место."));
     });
     return () => { void listener.then(handle => handle.remove()); };
-  }, [panel, started, updates.installing]);
+  }, [panel, started, updates.installing, introAccepted]);
 
   const advance = useCallback(() => {
     if (node.choices?.length || endingId) return;
+    if (node.next?.startsWith("ending:")) {
+      setEndingId(node.next.slice(7));
+      setHistory(items => [...items, node.id]);
+      return;
+    }
     if (node.next === "resolve") {
       setEndingId(chooseEnding(stats));
       setHistory((items) => [...items, node.id]);
@@ -183,14 +194,17 @@ export default function Home() {
     const nextStats = updateStats(stats, choice);
     setStats(nextStats);
     setHistory((items) => [...items, node.id]);
-    if (choice.next === "resolve") setEndingId(chooseEnding(nextStats));
+    setDecisions(items => [...items, `${node.id}:${node.choices!.indexOf(choice)}`]);
+    if (choice.next.startsWith("ending:")) setEndingId(choice.next.slice(7));
+    else if (choice.next === "resolve") setEndingId(chooseEnding(nextStats));
     else setNodeId(choice.next);
-  }, [node.id, stats]);
+  }, [node.id, node.choices, stats]);
 
   const reset = useCallback(() => {
     setNodeId("prologue");
     setStats(initialStats);
     setHistory([]);
+    setDecisions([]);
     setEndingId(undefined);
     setStarted(true);
     setPanel(null);
@@ -229,7 +243,7 @@ export default function Home() {
 
   const progress = Math.round((node.chapter / chapterCount) * 100);
   const isEnding = Boolean(endingId);
-  const currentSave = { nodeId, stats, history, endingId };
+  const currentSave = { nodeId, stats, history, decisions, endingId };
 
   return (
     <main className={`novel ${started ? "playing" : "on-title"} mood-${node.mood}`}>
@@ -257,13 +271,14 @@ export default function Home() {
           </button>
           <div className="title-links">
             <button className="text-button" disabled={!ready} onClick={() => setPanel("saves")}>Сохранения</button>
-            <button className="text-button" disabled={!ready} onClick={() => setPanel("endings")}>Концовки · {library.unlocked.length}/4</button>
+            <button className="text-button" disabled={!ready} onClick={() => setPanel("endings")}>Концовки · {library.unlocked.length}/{Object.keys(endingNodes).length}</button>
+            <button className="text-button" disabled={!ready} onClick={() => setPanel("map")}>Карта выборов</button>
             <button className="text-button" onClick={() => setPanel("updates")}>Версия {release.versionName}{updates.available ? " · новая версия" : ""}</button>
             {library.auto && <button className="text-button" onClick={() => setPanel("menu")}>Новая игра</button>}
           </div>
           <div className="title-meta">
             <span>{mainChapterCount} глав + пролог</span><span>{branchCount} развилок</span>
-            <span>{choiceCount} вариантов ответа</span><span>4 финала</span>
+            <span>{choiceCount} вариантов ответа</span><span>{Object.keys(endingNodes).length} финалов</span>
           </div>
         </section>
       ) : (
@@ -313,7 +328,7 @@ export default function Home() {
               </div>
             ) : isEnding ? (
               <div className="ending-actions">
-                <button className="primary-button" onClick={() => setPanel("endings")}>Концовки · {library.unlocked.length}/4</button>
+                <button className="primary-button" onClick={() => setPanel("endings")}>Концовки · {library.unlocked.length}/{Object.keys(endingNodes).length}</button>
                 <button className="text-button" onClick={() => setPanel("menu")}>Новая игра</button>
                 <button className="text-button" onClick={() => setStarted(false)}>На титульный экран</button>
               </div>
@@ -324,9 +339,10 @@ export default function Home() {
         </>
       )}
       {notice && <div className="storage-notice" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Закрыть сообщение">×</button></div>}
+      {!introAccepted && <IntroNotice onContinue={() => setIntroAccepted(true)} />}
       {panel && <GamePanel
         panel={panel} onPanel={setPanel} onClose={() => { if (!updates.installing) setPanel(null); }}
-        library={library} canSave={started || Boolean(library.auto)} onLoad={restore}
+        library={library} currentSave={currentSave} canSave={started || Boolean(library.auto)} onLoad={restore}
         onSave={index => {
           const slots = [...libraryRef.current.slots];
           slots[index] = snapshot(currentSave);

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { emptyLibrary, freshGame, LIBRARY_KEY, LEGACY_KEY, readLibrary, snapshot, validateSave, withAutosave, writeLibrary } from "../app/saves.ts";
+import { emptyLibrary, freshGame, LIBRARY_KEY, LEGACY_KEY, readLibrary, routeProgress, snapshot, validateSave, withAutosave, writeLibrary } from "../app/saves.ts";
 import { branchCount, choiceCount, chooseEnding, endingNodes, story } from "../app/story.ts";
 import { release, validateRelease } from "../app/updates.ts";
 
@@ -32,6 +32,29 @@ test("snapshot does not alias live stats or history", () => {
   const game = freshGame(); const saved = snapshot(game);
   game.stats.pressure = 10; game.history.push("prologue");
   assert.equal(saved.stats.pressure, 2); assert.deepEqual(saved.history, []);
+});
+
+test("map recovers unambiguous old choices but never guesses a shared final transition", () => {
+  const progress = routeProgress({ ...freshGame(), nodeId: "last_sheet", history: ["matrix", "target_tonya", "last_sheet"], endingId: "subject" });
+  assert.ok(progress.decisions.includes("matrix:0"));
+  assert.ok(!progress.decisions.some(key => key.startsWith("last_sheet:")));
+});
+
+test("new explicit final choice is retained and global route survives a new game", () => {
+  const ended = { ...freshGame(), nodeId: "last_sheet", history: ["last_sheet"], endingId: "subject", decisions: ["last_sheet:0"] };
+  const completed = withAutosave(emptyLibrary(), ended);
+  const restarted = withAutosave(completed, freshGame());
+  assert.deepEqual(restarted.decisions, ["last_sheet:0"]);
+  assert.ok(restarted.visited.includes("last_sheet"));
+  assert.deepEqual(routeProgress(restarted.auto).decisions, []);
+});
+
+test("map migration merges all surviving slots and discards invalid coverage ids", () => {
+  const old = { schema: 1, auto: snapshot(freshGame()), slots: [snapshot({ ...freshGame(), nodeId: "target_masha", history: ["matrix"] })], unlocked: [], visited: ["missing"], decisions: ["matrix:999"] };
+  const migrated = readLibrary(storage({ [LIBRARY_KEY]: JSON.stringify(old) })).library;
+  assert.ok(migrated.decisions.includes("matrix:1"));
+  assert.ok(!migrated.decisions.includes("matrix:999"));
+  assert.ok(!migrated.visited.includes("missing"));
 });
 
 test("invalid save fields and prototype keys are rejected", () => {
