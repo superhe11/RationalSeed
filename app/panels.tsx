@@ -31,7 +31,7 @@ export function GamePanel(props: Props) {
   const load = (save: SavedGame) => setConfirmation({ text: "Загрузить этот момент? Текущее автосохранение будет заменено. Ручные слоты останутся.", run: () => props.onLoad(save) });
   const viewing = reading && props.library.unlocked.includes(reading) ? endingNodes[reading] : null;
 
-  return <dialog className="game-panel" ref={dialog} aria-labelledby="panel-heading" onCancel={event => { event.preventDefault(); props.onClose(); }}>
+  return <dialog className={`game-panel ${props.panel === "map" ? "tree-panel" : ""}`} ref={dialog} aria-labelledby="panel-heading" onCancel={event => { event.preventDefault(); props.onClose(); }}>
     <div className="panel-heading"><h2 id="panel-heading">{panelLabels[props.panel]}</h2><button className="close-panel" disabled={props.locked} onClick={props.onClose} aria-label="Закрыть меню">×</button></div>
     <nav className="panel-nav" aria-label="Разделы меню">
       {(Object.keys(panelLabels) as Panel[]).map(panel => <button key={panel} aria-current={props.panel === panel ? "page" : undefined} disabled={props.locked} onClick={() => changePanel(panel)}>{panelLabels[panel]}</button>)}

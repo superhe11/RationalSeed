@@ -385,6 +385,32 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue); outline-
 .intro-notice { width: min(620px, calc(100% - 24px - var(--safe-left) - var(--safe-right))); }
 .intro-notice h2 { font: 500 1.8rem/1.2 Georgia, serif; margin: 20px 0; }
 .intro-notice .primary-button { margin-top: 12px; }
+.game-panel.tree-panel { width: calc(100% - 20px - var(--safe-left) - var(--safe-right)); max-width: 1440px; }
+.tree-chapters { display: flex; overflow-x: auto; gap: 8px; margin: 18px 0 12px; padding-bottom: 8px; }
+.tree-chapters button, .tree-toolbar button, .tree-toolbar select { min-height: 44px; padding: 8px 12px; color: var(--ink); background: #101c26; border: 1px solid var(--line); font-size: .875rem; flex: 0 0 auto; }
+.tree-chapters button { max-width: 240px; text-align: left; }
+.tree-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; font-size: .875rem; }
+.tree-toolbar label { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.tree-viewport { width: 100%; height: min(65dvh, 750px); min-height: 280px; overflow: auto; overscroll-behavior: contain; border: 1px solid var(--line); background: #080e14; touch-action: pan-x pan-y; cursor: grab; scrollbar-color: #70a8c4 #14212b; }
+.tree-viewport:active { cursor: grabbing; }
+.tree-viewport:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.tree-canvas { position: relative; transform-origin: top left; background-image: radial-gradient(#ffffff12 1px, transparent 1px); background-size: 24px 24px; }
+.tree-lines { position: absolute; inset: 0; pointer-events: none; }
+.tree-lines path { fill: none; stroke: #52606c; stroke-width: 1.5; stroke-dasharray: 5 5; }
+.tree-lines path.passed { stroke: #88cbe8; stroke-width: 3; stroke-dasharray: none; }
+.tree-chapter-label { position: absolute; top: 18px; font-size: 1rem; color: var(--gold); white-space: nowrap; }
+.tree-node { position: absolute; width: 224px; height: 112px; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px dashed #566570; background: #101a23; color: var(--ink); text-align: left; cursor: pointer; overflow: hidden; }
+.tree-node span, .tree-node small { font-size: .875rem; line-height: 1.2; color: #a7b7c1; }
+.tree-node b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 1rem; line-height: 1.25; font-weight: 500; }
+.tree-node small { margin-top: auto; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+.tree-node.kind-choice { border-radius: 18px 3px; background: #151b29; }
+.tree-node.kind-ending { border-radius: 12px; background: #282219; }
+.tree-node.is-done { border: 2px solid #88cbe8; }
+.tree-node.is-active { border: 3px solid var(--gold); box-shadow: 0 0 20px #dcb87530; }
+.tree-node.is-muted { opacity: .45; }
+.tree-node[aria-pressed="true"] { outline: 2px solid white; outline-offset: 3px; }
+.tree-detail { border-left: 3px solid var(--blue); padding: 16px; background: #ffffff05; }
+.update-diagnostic { overflow-wrap: anywhere; font-size: .875rem; }
 .map-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .map-controls button, .map-target { min-height: 44px; border: 1px solid var(--line); background: transparent; padding: 10px 12px; font-size: .875rem; color: var(--ink); cursor: pointer; }
 .map-controls button[aria-pressed="true"] { border-color: var(--blue); background: #70a8c41a; }

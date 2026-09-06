@@ -11,22 +11,27 @@ export function useUpdates(ready: boolean, showPopup: () => void) {
   const [installing, setInstalling] = useState(false);
   const [percent, setPercent] = useState(0);
   const [message, setMessage] = useState("");
+  const [diagnostic, setDiagnostic] = useState("");
   const checkingRef = useRef(false);
   const installingRef = useRef(false);
+  const failedRef = useRef(false);
   const shown = useRef<number | null>(null);
   const popup = useRef(showPopup);
   useEffect(() => { popup.current = showPopup; }, [showPopup]);
-  const check = useCallback(async (manual = false) => {
+  const check = useCallback(async () => {
     if (checkingRef.current || installingRef.current) return;
-    checkingRef.current = true; setChecking(true); setMessage("");
+    checkingRef.current = true; setChecking(true); setMessage(""); setDiagnostic("");
     try {
       const found = await checkRelease();
+      failedRef.current = false;
       setLatest(found);
       if (found.contentCode > release.contentCode) {
         if (shown.current !== found.contentCode && isAndroidApp()) { shown.current = found.contentCode; popup.current(); }
       } else setMessage("У вас последняя версия.");
-    } catch {
-      if (manual) setMessage("Не удалось проверить обновления. Проверьте интернет и попробуйте ещё раз. Можно продолжать играть офлайн.");
+    } catch (error) {
+      failedRef.current = true;
+      setMessage("Не удалось связаться с сервером обновлений. Игра доступна офлайн. Проверка повторится при возвращении в приложение или восстановлении сети.");
+      setDiagnostic(error instanceof Error ? error.message : String(error));
     } finally { checkingRef.current = false; setChecking(false); }
   }, []);
   useEffect(() => {
@@ -36,7 +41,9 @@ export function useUpdates(ready: boolean, showPopup: () => void) {
     const resume = () => { if (document.visibilityState === "visible") void check(); };
     document.addEventListener("visibilitychange", resume);
     window.addEventListener("focus", resume);
-    return () => { clearTimeout(timer); void listener.then(handle => handle.remove()); document.removeEventListener("visibilitychange", resume); window.removeEventListener("focus", resume); };
+    window.addEventListener("online", resume);
+    const retry = setInterval(() => { if (failedRef.current && document.visibilityState === "visible") void check(); }, 60000);
+    return () => { clearTimeout(timer); clearInterval(retry); void listener.then(handle => handle.remove()); document.removeEventListener("visibilitychange", resume); window.removeEventListener("focus", resume); window.removeEventListener("online", resume); };
   }, [ready, check]);
   const install = async () => {
     if (!latest || installingRef.current) return;
@@ -45,7 +52,7 @@ export function useUpdates(ready: boolean, showPopup: () => void) {
     catch { setMessage("Обновление не установлено. Текущая версия и сохранения на месте. Проверьте интернет и свободное место, затем повторите."); }
     finally { installingRef.current = false; setInstalling(false); }
   };
-  return { latest, checking, installing, percent, message, check, install, available: Boolean(latest && latest.contentCode > release.contentCode) };
+  return { latest, checking, installing, percent, message, diagnostic, check, install, available: Boolean(latest && latest.contentCode > release.contentCode) };
 }
 
 export function UpdatePanel({ updates }: { updates: ReturnType<typeof useUpdates> }) {
@@ -63,7 +70,8 @@ export function UpdatePanel({ updates }: { updates: ReturnType<typeof useUpdates
     </> : <><h3>Что изменилось в {release.versionName}</h3><ul className="patch-notes">{release.notes.map(note => <li key={note}>{note}</li>)}</ul></>}
     {installing && <><progress aria-label="Загрузка обновления" max={100} value={percent} /><p className="panel-intro">Не закрывайте приложение до завершения загрузки.</p></>}
     <p role="status">{message}</p>
-    <button className="text-button" disabled={checking || installing} onClick={() => void updates.check(true)}>{checking ? "Проверяю…" : "Проверить обновления"}</button>
+    {updates.diagnostic && <details className="update-diagnostic"><summary>Причина ошибки</summary><p>{updates.diagnostic}</p><p>Если интернет работает, откройте этот адрес в браузере на том же телефоне:</p><a href={`${release.updateOrigin}/api/release`} target="_blank" rel="noreferrer">Проверить доступность сервера</a></details>}
+    <button className="text-button" disabled={checking || installing} onClick={() => void updates.check()}>{checking ? "Проверяю…" : "Проверить обновления"}</button>
     <p className="panel-footnote">Игра работает без интернета. Сеть нужна только для проверки и загрузки обновлений. Прогресс никуда не отправляется.</p>
   </section>;
 }

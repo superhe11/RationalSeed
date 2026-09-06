@@ -1,82 +1,68 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { endingNodes, story, type StoryNode } from "./story";
+import { useMemo, useRef, useState } from "react";
+import { endingNodes, story } from "./story";
 import { routeProgress, type Library, type SaveState } from "./saves";
+import { buildRouteGraph, type GraphNode } from "./route-graph";
 
-const branches = Object.values(story).filter(node => node.choices);
-const chapters = [...new Set(branches.map(node => node.chapter))].sort((a, b) => a - b);
-
-function destination(next: string): { id?: string; label: string } {
-  const seen = new Set<string>();
-  while (next && !seen.has(next)) {
-    if (next === "resolve") return { label: "Финал по накопленным показателям" };
-    if (next.startsWith("ending:")) return { label: endingNodes[next.slice(7)]?.chapterTitle ?? "Финал" };
-    seen.add(next);
-    const node = story[next];
-    if (!node) break;
-    if (node.choices) return { id: next, label: `${node.chapterTitle} · развилка ${branches.findIndex(item => item.id === next) + 1}` };
-    next = node.next ?? "";
-  }
-  return { label: "Конец ветки" };
-}
+const graph = buildRouteGraph();
+const byId = new Map(graph.nodes.map(node => [node.id, node]));
+const chapters = [...new Set(Object.values(story).map(node => node.chapter))].map(chapter => ({ chapter, node: graph.nodes.filter(node => node.chapter === chapter && node.kind === "scene").sort((a, b) => a.x - b.x)[0] }));
 
 export function RouteMap({ library, current, hasRun }: { library: Library; current: SaveState; hasRun: boolean }) {
   const [mode, setMode] = useState<"current" | "all">("current");
-  const [chapter, setChapter] = useState(chapters.includes(story[current.nodeId]?.chapter) ? story[current.nodeId].chapter : 1);
   const [reveal, setReveal] = useState(false);
   const [onlyClosed, setOnlyClosed] = useState(false);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const viewport = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ x: number; left: number } | null>(null);
   const run = useMemo(() => hasRun ? routeProgress(current) : { visited: [], decisions: [] }, [current, hasRun]);
   const visited = new Set(mode === "current" ? run.visited : library.visited);
   const decisions = new Set(mode === "current" ? run.decisions : library.decisions);
-  const currentEndings = current.endingId ? [current.endingId] : [];
-  const unlocked = new Set(mode === "current" ? currentEndings : library.unlocked);
-  const choicesCount = branches.reduce((total, node) => total + node.choices!.length, 0);
-  const completed = branches.filter(node => node.choices!.every((_, index) => decisions.has(`${node.id}:${index}`))).length;
-  const inChapter = branches.filter(node => node.chapter === chapter && (!onlyClosed || node.choices!.some((_, index) => !decisions.has(`${node.id}:${index}`))));
-  const jump = (id: string) => {
-    const target = story[id];
-    setChapter(target.chapter);
-    setOnlyClosed(false);
-    setTimeout(() => document.getElementById(`map-${id}`)?.scrollIntoView({ block: "start", behavior: "smooth" }), 0);
-  };
-  return <section className="route-map" aria-label="Карта сюжетных выборов">
+  const unlocked = new Set(mode === "current" ? current.endingId ? [current.endingId] : [] : library.unlocked);
+  const activeId = hasRun ? current.endingId ? `ending:${current.endingId}` : current.nodeId : "";
+  const done = (node: GraphNode) => node.kind === "choice" ? decisions.has(node.id) : node.kind === "ending" ? unlocked.has(node.source) : visited.has(node.source);
+  const known = (node: GraphNode) => reveal || (node.kind === "choice" ? visited.has(node.source) : done(node));
+  const jump = (id: string) => { const node = byId.get(id); if (node) viewport.current?.scrollTo({ left: Math.max(0, node.x * zoom - 24), top: Math.max(0, node.y * zoom - 80), behavior: "smooth" }); };
+  const pan = (direction: number) => viewport.current?.scrollBy({ left: direction * viewport.current.clientWidth * .75, behavior: "smooth" });
+  const detail = selected ? byId.get(selected) : null;
+  return <section className="route-map" aria-label="Древо всех сюжетных выборов">
     <div className="map-controls">
       <button aria-pressed={mode === "current"} onClick={() => setMode("current")}>Это прохождение</button>
       <button aria-pressed={mode === "all"} onClick={() => setMode("all")}>За все игры</button>
+      <button disabled={!hasRun} onClick={() => jump(activeId)}>К текущей сцене</button>
     </div>
-    <p className="panel-intro" role="status">Выбрано {decisions.size} из {choicesCount} ответов · открыто {visited.size} из {Object.keys(story).length} сцен · финалы {unlocked.size}/{Object.keys(endingNodes).length}.{mode === "all" && ` Полностью исследовано развилок: ${completed}/${branches.length}.`}</p>
+    <p className="panel-intro" role="status">Ответы {decisions.size}/{graph.nodes.filter(node => node.kind === "choice").length} · сцены {visited.size}/{Object.keys(story).length} · финалы {unlocked.size}/{Object.keys(endingNodes).length}</p>
     <div className="map-options">
-      <label>Глава <select value={chapter} onChange={event => setChapter(Number(event.target.value))}>{chapters.map(number => <option key={number} value={number}>{branches.find(node => node.chapter === number)!.chapterTitle}</option>)}</select></label>
-      <label><input type="checkbox" checked={onlyClosed} onChange={event => setOnlyClosed(event.target.checked)} /> Только недопройденные развилки</label>
-      <label><input type="checkbox" checked={reveal} onChange={event => setReveal(event.target.checked)} /> Показать названия закрытых сцен (спойлеры)</label>
+      <label><input type="checkbox" checked={onlyClosed} onChange={event => setOnlyClosed(event.target.checked)} /> Приглушить уже пройденное</label>
+      <label><input type="checkbox" checked={reveal} onChange={event => setReveal(event.target.checked)} /> Раскрыть закрытые сцены (спойлеры)</label>
     </div>
-    <div className="map-legend"><span>✓ Пройдено</span><span>● Текущая сцена</span><span>○ Ещё не пройдено</span></div>
-    {!hasRun && mode === "current" && <p>Текущее прохождение ещё не начато.</p>}
-    {!inChapter.length && <p>В этой главе не осталось развилок, подходящих под фильтр.</p>}
-    {inChapter.map(node => <Branch key={node.id} node={node} visited={visited.has(node.id)} active={hasRun && !current.endingId && current.nodeId === node.id && mode === "current"} decisions={decisions} reveal={reveal} onJump={jump} />)}
-    <h3 className="map-endings-title">Финалы</h3>
-    <div className="map-ending-grid">{Object.entries(endingNodes).map(([id, node]) => <div key={id} className={`map-ending ${unlocked.has(id) ? "is-done" : ""}`}><span>{unlocked.has(id) ? "✓ Открыт" : "○ Закрыт"}</span><b>{node.chapterTitle.replace("Финал · ", "")}</b></div>)}</div>
-    <p className="panel-footnote">Карта ничего не перематывает и не меняет сейв. Общий прогресс не сбрасывается новой игрой. Для старых сейвов восстановлены только однозначные переходы: выборы с одинаковым выходом и уже удалённые прохождения восстановить нельзя.</p>
+    <nav className="tree-chapters" aria-label="Перейти к главе на общем древе">{chapters.map(({ chapter, node }) => <button key={chapter} onClick={() => jump(node.id)}>{story[node.source].chapterTitle}</button>)}<button onClick={() => jump(`ending:${Object.keys(endingNodes)[0]}`)}>Финалы</button></nav>
+    <div className="tree-toolbar"><button onClick={() => pan(-1)} aria-label="Прокрутить древо влево">←</button><span>Все главы · листай слева направо</span><button onClick={() => pan(1)} aria-label="Прокрутить древо вправо">→</button><label>Масштаб <select value={zoom} onChange={event => setZoom(Number(event.target.value))}><option value={.65}>65%</option><option value={.85}>85%</option><option value={1}>100%</option><option value={1.25}>125%</option></select></label></div>
+    {/* Keyboard focus lets keyboard-only users scroll the two-dimensional map. */}
+    {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
+    <div className="tree-viewport" ref={viewport} tabIndex={0} role="region" aria-label="Горизонтальное древо. Используйте прокрутку или клавиши со стрелками."
+      onPointerDown={event => { if (event.pointerType !== "mouse" || (event.target as HTMLElement).closest("button")) return; drag.current = { x: event.clientX, left: event.currentTarget.scrollLeft }; event.currentTarget.setPointerCapture(event.pointerId); }}
+      onPointerMove={event => { if (drag.current) event.currentTarget.scrollLeft = drag.current.left - (event.clientX - drag.current.x); }}
+      onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }}>
+      <div style={{ width: graph.width * zoom, height: graph.height * zoom }}><div className="tree-canvas" style={{ width: graph.width, height: graph.height, transform: `scale(${zoom})` }}>
+        <svg width={graph.width} height={graph.height} className="tree-lines" aria-hidden="true">{graph.edges.map(edge => {
+          const from = byId.get(edge.from)!; const to = byId.get(edge.to)!;
+          const passed = edge.decision ? decisions.has(edge.decision) && (to.kind !== "ending" || done(to)) : done(from) && done(to);
+          const x1 = from.x + 224, y1 = from.y + 56, x2 = to.x, y2 = to.y + 56;
+          return <path key={`${edge.from}->${edge.to}`} className={passed ? "passed" : ""} d={`M${x1},${y1} C${x1 + (x2 - x1) / 2},${y1} ${x2 - (x2 - x1) / 2},${y2} ${x2},${y2}`} />;
+        })}</svg>
+        {chapters.map(({ chapter, node }) => <span className="tree-chapter-label" key={chapter} style={{ left: node.x }}>{story[node.source].chapterTitle}</span>)}
+        {graph.nodes.map(node => <button key={node.id} style={{ left: node.x, top: node.y }} className={`tree-node kind-${node.kind} ${done(node) ? "is-done" : "is-locked"} ${mode === "current" && node.id === activeId ? "is-active" : ""} ${onlyClosed && done(node) ? "is-muted" : ""}`} aria-pressed={selected === node.id} onClick={() => setSelected(node.id)}>
+          <span>{mode === "current" && node.id === activeId ? "● Сейчас здесь" : done(node) ? "✓ Пройдено" : "○ Не пройдено"} · {node.kind === "choice" ? `Ответ ${node.index! + 1}` : node.kind === "ending" ? "Финал" : "Сцена"}</span>
+          <b>{known(node) || node.kind === "ending" ? node.label : "Неизвестная сцена"}</b>
+          <small>{node.kind === "scene" && known(node) ? story[node.source].date : "Нажми, чтобы посмотреть"}</small>
+        </button>)}
+      </div></div>
+    </div>
+    <p className="map-legend">Голубое — пройдено · золотое — текущая сцена · пунктир — не пройдено. Линии показывают развилки и места, где пути снова сходятся.</p>
+    {detail && <article className="tree-detail"><h3>{known(detail) || detail.kind === "ending" ? detail.label : "Сцена пока закрыта"}</h3><p>{!known(detail) ? "Текст откроется после прохождения. Можно включить спойлеры выше." : detail.kind === "choice" ? `${detail.label} — ${story[detail.source].choices![detail.index!].consequence}` : detail.kind === "ending" ? endingNodes[detail.source].text : story[detail.source].text}</p></article>}
+    <p className="panel-footnote">Просмотр древа не меняет сейв. Общий прогресс сохраняется между играми. Старые сейвы восстанавливают только однозначные выборы; ранее удалённые прохождения восстановить нельзя. Связи с финалами зависят от накопленных показателей.</p>
   </section>;
-}
-
-function Branch({ node, visited, active, decisions, reveal, onJump }: { node: StoryNode; visited: boolean; active: boolean; decisions: Set<string>; reveal: boolean; onJump: (id: string) => void }) {
-  const known = visited || reveal;
-  const number = branches.indexOf(node) + 1;
-  return <article className={`map-branch ${active ? "is-active" : visited ? "is-done" : "is-locked"}`} id={`map-${node.id}`}>
-    <header className="map-origin"><span>{active ? "● Сейчас здесь" : visited ? "✓ Сцена открыта" : "○ Сцена закрыта"} · развилка {number}</span><h3>{known ? `${node.speaker} · ${node.date}` : "Неизвестная сцена"}</h3>{known && <p>{node.text}</p>}</header>
-    <div className="map-fork" aria-label={`Ответы развилки ${number}`}>
-      {node.choices!.map((choice, index) => {
-        const done = decisions.has(`${node.id}:${index}`);
-        const target = destination(choice.next);
-        return <div className={`map-path ${done ? "is-done" : ""}`} key={index}>
-          <span className="map-path-state">{done ? "✓ Выбрано" : "○ Не выбрано"} · {index + 1}</span>
-          <p>{known ? choice.label : "Ответ откроется вместе со сценой"}</p>
-          <span className="map-arrow" aria-hidden="true">↓</span>
-          {target.id ? <button className="map-target" onClick={() => onJump(target.id!)}>К следующей развилке →</button> : <span className="map-target-label">{known ? target.label : "Дальнейший путь скрыт"}</span>}
-        </div>;
-      })}
-    </div>
-  </article>;
 }

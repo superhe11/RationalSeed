@@ -7,6 +7,10 @@ export const isAndroidApp = () => Capacitor.getPlatform() === "android";
 export type AppRelease = { contentCode: number; versionName: string; runtimeVersion: string; notes: string[]; bundleUrl: string; sha256: string; publishedAt: string; sizeBytes: number };
 
 export function validateRelease(value: unknown): AppRelease {
+  if (typeof value === "string") {
+    try { value = JSON.parse(value.replace(/^\uFEFF/, "")); }
+    catch { throw new Error("Сервер вернул не JSON: возможно, страницу блокировки или входа"); }
+  }
   const data = value as AppRelease;
   if (!data || !Number.isSafeInteger(data.contentCode) || data.contentCode < 1 || typeof data.versionName !== "string" || !/^\d+\.\d+\.\d+$/.test(data.versionName) || typeof data.runtimeVersion !== "string" || !Array.isArray(data.notes) || data.notes.length > 20 || !data.notes.every(note => typeof note === "string" && note.length <= 1000) || typeof data.sha256 !== "string" || !/^[a-f0-9]{64}$/i.test(data.sha256) || !Number.isFinite(Date.parse(data.publishedAt)) || !Number.isSafeInteger(data.sizeBytes) || data.sizeBytes <= 0 || data.sizeBytes > 25_000_000) throw new Error("Неверный формат обновления");
   const url = new URL(data.bundleUrl);
@@ -16,14 +20,24 @@ export function validateRelease(value: unknown): AppRelease {
 
 export async function checkRelease(): Promise<AppRelease> {
   const url = `${release.updateOrigin}/api/release?t=${Date.now()}`;
-  if (isAndroidApp()) {
-    const response = await CapacitorHttp.get({ url, connectTimeout: 8000, readTimeout: 8000, responseType: "json", headers: { Accept: "application/json" } });
-    if (response.status !== 200) throw new Error("Сервер обновлений недоступен");
+  const webCheck = async () => {
+    const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(15000), headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return validateRelease(await response.text());
+  };
+  if (!isAndroidApp()) return webCheck();
+  const nativeCheck = async () => {
+    const response = await CapacitorHttp.get({ url, connectTimeout: 15000, readTimeout: 15000, responseType: "text", headers: { Accept: "application/json" } });
+    if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
     return validateRelease(response.data);
+  };
+  // Different Android networks/WebViews can fail in only one HTTP stack.
+  // Accept the first fully validated release, never an unvalidated response.
+  try { return await Promise.any([nativeCheck(), webCheck()]); }
+  catch (error) {
+    const errors = error instanceof AggregateError ? error.errors : [error];
+    throw new Error(errors.map(item => item instanceof Error ? item.message : String(item)).join(" / ").slice(0, 320));
   }
-  const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(8000) });
-  if (!response.ok) throw new Error("Сервер обновлений недоступен");
-  return validateRelease(await response.json());
 }
 
 export async function markAppReady() {

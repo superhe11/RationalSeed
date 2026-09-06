@@ -339,6 +339,7 @@ export default function Home() {
         </>
       )}
       {notice && <div className="storage-notice" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Закрыть сообщение">×</button></div>}
+      {updates.diagnostic && !panel && introAccepted && <div className="storage-notice" role="status">Не удалось проверить обновления.<button onClick={() => setPanel("updates")}>Подробнее</button></div>}
       {!introAccepted && <IntroNotice onContinue={() => setIntroAccepted(true)} />}
       {panel && <GamePanel
         panel={panel} onPanel={setPanel} onClose={() => { if (!updates.installing) setPanel(null); }}
