@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { emptyLibrary, freshGame, LIBRARY_KEY, LEGACY_KEY, readLibrary, routeProgress, snapshot, validateSave, withAutosave, writeLibrary } from "../app/saves.ts";
-import { branchCount, choiceCount, choiceLockReason, chooseEnding, endingNodes, guideChoiceIndexForState, guideTargetReachable, story } from "../app/story.ts";
+import { branchCount, choiceCount, choiceLockReason, chooseEnding, endingNodes, guideChoiceIndexForState, guideTargetReachable, initialStats, story } from "../app/story.ts";
 import { release, validateRelease } from "../app/updates.ts";
 import { achievements, unlockedAchievements } from "../app/achievements.ts";
 
@@ -110,12 +110,17 @@ test("final guide only marks a route that remains reachable in this run", () => 
   const bad = { boundaries: 2, selfControl: 1, pressure: 10 };
   assert.equal(guideTargetReachable("therapist", "exit", bad, []), false);
   assert.equal(guideTargetReachable("therapist", "mirror", bad, []), false);
-  assert.equal(guideChoiceIndexForState("last_sheet", "stage_empty", bad, []), undefined);
+  assert.equal(guideChoiceIndexForState("last_sheet", "stage_empty", bad, []), 2);
   const steady = { boundaries: 8, selfControl: 7, pressure: 3 };
   assert.equal(guideChoiceIndexForState("therapist", "exit", steady, []), 0);
   assert.equal(guideChoiceIndexForState("therapy_go_result", "exit", steady, []), 0);
-  const caseHistory = ["matrix:1", "first_signal:0", "october_round:0", "direct_no:2", "yana_proxy:3"];
-  assert.equal(guideChoiceIndexForState("last_sheet", "stage_empty", bad, caseHistory), 2);
+});
+
+test("guide exposes a first highlighted choice for every ending in a new run", () => {
+  for (const endingId of Object.keys(endingNodes)) {
+    assert.equal(guideTargetReachable("prologue", endingId, initialStats, []), true, endingId);
+    assert.notEqual(guideChoiceIndexForState("matrix", endingId, initialStats, []), undefined, endingId);
+  }
 });
 
 test("late restorative choice stays closed until the stats support it", () => {
@@ -124,14 +129,15 @@ test("late restorative choice stays closed until the stats support it", () => {
   assert.equal(choiceLockReason({ boundaries: 8, selfControl: 7, pressure: 4 }, resetChoice), undefined);
 });
 
-test("conditional bad endings require the matching route, not only high pressure", () => {
+test("conditional bad endings require an already destructive state", () => {
   const caseRoute = story.last_sheet.choices[2];
   const sexRoute = story.last_sheet.choices[3];
+  const steady = { boundaries: 6, selfControl: 6, pressure: 4 };
   const bad = { boundaries: 0, selfControl: 0, pressure: 10 };
-  assert.ok(choiceLockReason(bad, caseRoute, []));
-  assert.ok(choiceLockReason(bad, sexRoute, ["mentor_choice:3", "freshman_boundary:1"]));
-  assert.equal(choiceLockReason(bad, caseRoute, ["matrix:1", "first_signal:0", "october_round:0", "direct_no:2", "yana_proxy:3"]), undefined);
-  assert.equal(choiceLockReason(bad, sexRoute, ["mentor_choice:3", "freshman_boundary:1", "varya_intimacy:1"]), undefined);
+  assert.ok(choiceLockReason(steady, caseRoute, []));
+  assert.ok(choiceLockReason(steady, sexRoute, []));
+  assert.equal(choiceLockReason(bad, caseRoute, []), undefined);
+  assert.equal(choiceLockReason(bad, sexRoute, []), undefined);
 });
 
 test("achievements use the shared library progress and keep locked goals visible", () => {

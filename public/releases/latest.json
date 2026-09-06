@@ -1,13 +1,13 @@
 {
-    "contentCode":  19,
-    "versionName":  "2.1.2",
+    "contentCode":  20,
+    "versionName":  "2.1.3",
     "runtimeVersion":  "android-2",
-    "publishedAt":  "2026-09-06T18:01:40.1825280Z",
+    "publishedAt":  "2026-09-06T18:31:16.5867580Z",
     "notes":  [
-                  "Проводник по финалам от начала нового прохождения.",
-                  "Упрощение меню и исправления мобильного интерфейса."
+                  "Исправление проводника по финалам.",
+                  "Золотая подсветка снова ведёт к выбранной концовке."
               ],
-    "bundleUrl":  "https://rational-seed-novel.workspace-vo-3629.chatgpt.site/releases/novel-2.1.2-19.zip",
-    "sha256":  "e5688df6e944ddfd0bd17df0d15663049e74bf9b47b2b4358da53261d5d3c0c3",
-    "sizeBytes":  306634
+    "bundleUrl":  "https://rational-seed-novel.workspace-vo-3629.chatgpt.site/releases/novel-2.1.3-20.zip",
+    "sha256":  "d9d015362bca614489dd068ed28aad2db8366354759f3c4d0713bd3c58fd916d",
+    "sizeBytes":  306769
 }

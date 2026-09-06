@@ -129,14 +129,34 @@ const guideStatsAfter = (stats: StoryStats, choice: Choice): StoryStats => ({
   pressure: guideClamp(stats.pressure + (choice.delta.pressure ?? 0)),
 });
 
+// Keep only choices that a future lock can inspect.  The late bad endings use
+// the accumulated pressure/boundaries instead of a brittle checklist of nodes,
+// so they do not need to preserve unrelated history here.
+const guideRelevantDecisions: Record<string, readonly string[]> = {};
+const guideReachabilityCache = new Map<string, boolean>();
+
+function guideDecisionsFor(endingId: string, decisions: string[]) {
+  const relevant = guideRelevantDecisions[endingId];
+  return relevant ? decisions.filter((decision) => relevant.includes(decision)) : [];
+}
+
+function guideCacheKey(state: GuideState, endingId: string) {
+  return `${endingId}:${state.nodeId}:${state.stats.boundaries},${state.stats.selfControl},${state.stats.pressure}:${guideDecisionsFor(endingId, state.decisions).sort().join("|")}`;
+}
+
 function guideCanReach(state: GuideState, endingId: string) {
-  const queue = [state];
+  const initial: GuideState = { ...state, decisions: guideDecisionsFor(endingId, state.decisions) };
+  const initialKey = guideCacheKey(initial, endingId);
+  const cached = guideReachabilityCache.get(initialKey);
+  if (cached !== undefined) return cached;
+
+  const queue = [initial];
   const seen = new Set<string>();
   let steps = 0;
-  while (queue.length && steps < 25_000) {
+  while (queue.length && steps < 100_000) {
     steps += 1;
     const current = queue.shift()!;
-    const key = `${current.nodeId}:${current.stats.boundaries},${current.stats.selfControl},${current.stats.pressure}:${[...current.decisions].sort().join("|")}`;
+    const key = guideCacheKey(current, endingId);
     if (seen.has(key)) continue;
     seen.add(key);
     const node = story[current.nodeId];
@@ -145,23 +165,56 @@ function guideCanReach(state: GuideState, endingId: string) {
     for (const { choice, index } of edges) {
       if (index >= 0 && choiceLockReason(current.stats, choice, current.decisions)) continue;
       const stats = index >= 0 ? guideStatsAfter(current.stats, choice) : current.stats;
-      const decisions = index >= 0 ? [...current.decisions, `${node.id}:${index}`] : current.decisions;
+      const decisions = index >= 0 ? guideDecisionsFor(endingId, [...current.decisions, `${node.id}:${index}`]) : current.decisions;
       if (choice.next === "resolve") {
-        if (chooseEnding(stats) === endingId) return true;
-      } else if (choice.next === `ending:${endingId}`) return true;
+        if (chooseEnding(stats) === endingId) {
+          guideReachabilityCache.set(initialKey, true);
+          return true;
+        }
+      } else if (choice.next === `ending:${endingId}`) {
+        guideReachabilityCache.set(initialKey, true);
+        return true;
+      }
       else if (choice.next && !choice.next.startsWith("ending:")) queue.push({ nodeId: choice.next, stats, decisions });
     }
   }
+  guideReachabilityCache.set(initialKey, false);
   return false;
 }
 
 export function guideTargetReachable(nodeId: string, endingId: string, stats: StoryStats, decisions: string[]) {
-  return guideCanReach({ nodeId, stats, decisions }, endingId);
+  // The status text must answer the same question as the visible gold frame.
+  // Follow the guide itself through read-only interludes and choices; this is
+  // both cheaper and more accurate than enumerating every cosmetic branch.
+  let currentId = nodeId;
+  let currentStats = { ...stats };
+  let currentDecisions = [...decisions];
+  for (let steps = 0; steps < 256; steps += 1) {
+    if (currentId === `ending:${endingId}`) return true;
+    const node = story[currentId];
+    if (!node) return false;
+    if (!node.choices) {
+      if (!node.next) return false;
+      currentId = node.next;
+      continue;
+    }
+    const index = guideChoiceIndexForState(currentId, endingId, currentStats, currentDecisions);
+    if (index === undefined) return false;
+    const choice = node.choices[index];
+    if (choiceLockReason(currentStats, choice, currentDecisions)) return false;
+    currentStats = guideStatsAfter(currentStats, choice);
+    currentDecisions = [...currentDecisions, `${node.id}:${index}`];
+    if (choice.next === "resolve") return chooseEnding(currentStats) === endingId;
+    currentId = choice.next;
+  }
+  return false;
 }
 
 export function guideChoiceIndexForState(nodeId: string, endingId: string, stats: StoryStats, decisions: string[]) {
   const node = story[nodeId];
   if (!node?.choices) return undefined;
+  const fixedChoice = guideChoiceIndex(nodeId, endingId);
+  if (fixedChoice !== undefined && !choiceLockReason(stats, node.choices[fixedChoice], decisions)) return fixedChoice;
   for (let index = 0; index < node.choices.length; index += 1) {
     const choice = node.choices[index];
     if (choiceLockReason(stats, choice, decisions)) continue;
@@ -1148,8 +1201,8 @@ export const story: Record<string, StoryNode> = {
     [
       c("Удалить список и перестать вести учёт живых людей", "Контроль уменьшается. Люди снова становятся людьми.", "resolve", { boundaries: 5, selfControl: 4, pressure: -5 }, { boundaries: 7, selfControl: 6, pressureMax: 4 }, "Нужны устойчивые границы, самоконтроль и низкое давление."),
       c("Переименовать файл в «саморазвитие_v12_final»", "Старый цикл получает взрослое имя и новую дату изменения.", "resolve", { pressure: 3, selfControl: -2 }),
-      c("Собрать вещи и пойти в вуз «объяснять свою правду»", "Обиду снова готовят как публичный проект.", "case_final_arrival", { pressure: 4, boundaries: -3 }, undefined, "Этот путь открывается после серии худших решений.", { decisions: ["matrix:1", "first_signal:0", "october_round:0", "direct_no:2", "yana_proxy:3", "mentor_choice:3", "varya_intimacy:1", "club_no:3"], minimum: 5 }),
-      c("Открыть новую таблицу и сделать близость главной метрикой", "Чужая жизнь снова сводится к результату.", "sex_final_arrival", { pressure: 4, boundaries: -3 }, undefined, "Этот путь требует нескольких решений, где Саша настойчиво разгонял личную тему.", { decisions: ["mentor_choice:3", "freshman_boundary:1", "freshman_boundary:2", "freshman_boundary:3", "varya_intimacy:1", "varya_intimacy:2", "varya_intimacy:3", "profile_reply:2"], minimum: 3 }),
+      c("Собрать вещи и пойти в вуз «объяснять свою правду»", "Обиду снова готовят как публичный проект.", "case_final_arrival", { pressure: 4, boundaries: -3 }, { pressureMin: 7, boundariesMax: 4 }, "Этот путь открывается, когда обида уже стала главным способом разговаривать с миром."),
+      c("Открыть новую таблицу и сделать близость главной метрикой", "Чужая жизнь снова сводится к результату.", "sex_final_arrival", { pressure: 4, boundaries: -3 }, { pressureMin: 7, boundariesMax: 4 }, "Этот путь открывается, когда поиск близости уже превращён в давление и учёт."),
     ],
   ),
   case_final_arrival: a(

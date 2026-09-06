@@ -1,13 +1,13 @@
 {
-  "versionCode": 18,
-  "contentCode": 19,
+  "versionCode": 19,
+  "contentCode": 20,
   "runtimeVersion": "android-2",
-  "versionName": "2.1.2",
+  "versionName": "2.1.3",
   "githubRepository": "superhe11/RationalSeed",
   "updateManifestUrl": "https://raw.githubusercontent.com/superhe11/RationalSeed/updates/latest.json",
   "updateOrigin": "https://rational-seed-novel.workspace-vo-3629.chatgpt.site",
   "notes": [
-    "Проводник по финалам от начала нового прохождения.",
-    "Упрощение меню и исправления мобильного интерфейса."
+    "Исправление проводника по финалам.",
+    "Золотая подсветка снова ведёт к выбранной концовке."
   ]
 }
