@@ -1,13 +1,13 @@
 {
-    "contentCode":  8,
-    "versionName":  "1.5.0",
+    "contentCode":  9,
+    "versionName":  "1.6.0",
     "runtimeVersion":  "android-2",
-    "publishedAt":  "2026-09-06T11:15:19.9815814Z",
+    "publishedAt":  "2026-09-06T11:38:44.3279120Z",
     "notes":  [
-                  "Расширение сюжетных веток и концовок.",
-                  "Добавление условий и режима чтения."
+                  "Расширение сюжетных веток и условий финалов.",
+                  "Переработка дерева выборов."
               ],
-    "bundleUrl":  "https://rational-seed-novel.workspace-vo-3629.chatgpt.site/releases/novel-1.5.0-8.zip",
-    "sha256":  "4f40d2eb8cf98d6e8ad69f2090c9dbf98e0234f5212f47f4b4121d841d0156c6",
-    "sizeBytes":  2135766
+    "bundleUrl":  "https://rational-seed-novel.workspace-vo-3629.chatgpt.site/releases/novel-1.6.0-9.zip",
+    "sha256":  "600d0eb63af7cd60db186fb15b4c075002eaac50ee193213f47305d8e0a9d1cb",
+    "sizeBytes":  2137951
 }

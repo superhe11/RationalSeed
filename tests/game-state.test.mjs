@@ -103,6 +103,16 @@ test("late restorative choice stays closed until the stats support it", () => {
   assert.equal(choiceLockReason({ boundaries: 8, selfControl: 7, pressure: 4 }, resetChoice), undefined);
 });
 
+test("conditional bad endings require the matching route, not only high pressure", () => {
+  const caseRoute = story.guitar_choice.choices[2];
+  const sexRoute = story.guitar_choice.choices[3];
+  const bad = { boundaries: 0, selfControl: 0, pressure: 10 };
+  assert.ok(choiceLockReason(bad, caseRoute, []));
+  assert.ok(choiceLockReason(bad, sexRoute, ["mentor_choice:3", "freshman_boundary:1"]));
+  assert.equal(choiceLockReason(bad, caseRoute, ["matrix:1", "first_signal:0", "october_round:0", "direct_no:2", "yana_proxy:3"]), undefined);
+  assert.equal(choiceLockReason(bad, sexRoute, ["mentor_choice:3", "freshman_boundary:1", "varya_intimacy:1"]), undefined);
+});
+
 const validRelease = () => ({ contentCode: 3, versionName: "1.2.0", runtimeVersion: "android-2", notes: ["Исправление"], bundleUrl: `${release.updateOrigin}/releases/novel-1.2.0-3.zip`, sha256: "a".repeat(64), publishedAt: "2026-09-05T20:00:00Z", sizeBytes: 2000 });
 test("release requires trusted HTTPS URL, checksum, bounded archive size and valid version", () => {
   assert.equal(validateRelease(validRelease()).contentCode, 3);

@@ -192,7 +192,7 @@ export default function Home() {
   }, [endingId, node, stats]);
 
   const selectChoice = useCallback((choice: Choice) => {
-    if (choiceLockReason(stats, choice)) return;
+    if (choiceLockReason(stats, choice, decisions)) return;
     const nextStats = updateStats(stats, choice);
     setStats(nextStats);
     setHistory((items) => [...items, node.id]);
@@ -200,7 +200,7 @@ export default function Home() {
     if (choice.next.startsWith("ending:")) setEndingId(choice.next.slice(7));
     else if (choice.next === "resolve") setEndingId(chooseEnding(nextStats));
     else setNodeId(choice.next);
-  }, [node.id, node.choices, stats]);
+  }, [node.id, node.choices, stats, decisions]);
 
   const reset = useCallback(() => {
     setNodeId("prologue");
@@ -317,7 +317,7 @@ export default function Home() {
             {node.choices ? (
               <div className="choices">
                 {node.choices.map((choice, index) => {
-                  const lockReason = choiceLockReason(stats, choice);
+                  const lockReason = choiceLockReason(stats, choice, decisions);
                   return <button key={choice.label} className={lockReason ? "choice-locked" : undefined} disabled={Boolean(lockReason)} onClick={() => selectChoice(choice)}>
                     <span className="choice-index">0{index + 1}</span>
                     <span className="choice-copy"><b>{choice.label}</b><small>{lockReason ?? choice.consequence}</small></span>

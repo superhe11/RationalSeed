@@ -6,7 +6,9 @@ export function buildRouteGraph(compact = false) {
   const nodeWidth = compact ? 176 : 224;
   const nodeHeight = compact ? 96 : 112;
   const columnStep = compact ? 216 : 296;
-  const rowStep = compact ? 116 : 144;
+  // Keep branch tracks apart vertically. A route map is easier to read when it
+  // grows downwards than when four answers are squeezed into one horizontal band.
+  const rowStep = compact ? 140 : 166;
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
   const targets = (next: string) => next === "resolve" ? Object.keys(endingNodes).map(id => `ending:${id}`) : [next];
@@ -34,16 +36,19 @@ export function buildRouteGraph(compact = false) {
   }
   nodes.forEach(node => depth(node.id));
   const columns = Array.from({ length: Math.max(...depths.values()) + 1 }, (_, column) => nodes.filter(node => depths.get(node.id) === column));
-  const rows = Math.max(...columns.map(column => column.length));
   columns.forEach((column, x) => {
     const average = (node: GraphNode) => {
       const parents = incoming.get(node.id)!;
       return parents.length ? parents.reduce((sum, edge) => sum + byId.get(edge.from)!.y, 0) / parents.length : 0;
     };
-    column.sort((a, b) => average(a) - average(b));
-    // Start every column at the top. Centering sparse early columns created a
-    // large empty mobile viewport before the first playable scene.
-    column.forEach((node, row) => { node.x = 16 + x * columnStep; node.y = 48 + row * rowStep; });
+    // Barycentric order keeps sibling paths in their original order and puts a
+    // merge beneath the middle of the paths that feed it. That is far less
+    // confusing than the old top-aligned grid, which created crossing cables.
+    column.sort((a, b) => average(a) - average(b) || a.id.localeCompare(b.id));
+    const base = column.reduce((sum, node, row) => sum + average(node) - row * rowStep, 0) / column.length;
+    const shift = Math.max(48 - base, 0);
+    column.forEach((node, row) => { node.x = 16 + x * columnStep; node.y = base + shift + row * rowStep; });
   });
-  return { nodes, edges, nodeWidth, nodeHeight, width: columns.length * columnStep + 16, height: rows * rowStep + 64 };
+  const height = Math.max(...nodes.map(node => node.y + nodeHeight)) + 64;
+  return { nodes, edges, nodeWidth, nodeHeight, width: columns.length * columnStep + 16, height };
 }
