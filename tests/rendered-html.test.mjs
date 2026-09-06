@@ -28,10 +28,11 @@ test("server renders the visual novel shell", async () => {
 });
 
 test("project contains the story, launcher, and generated art", async () => {
-  const [story, launcher, image] = await Promise.all([
+  const [story, launcher, image, launcherIcon] = await Promise.all([
     readFile(new URL("app/story.ts", root), "utf8"),
     readFile(new URL("ОТКРЫТЬ_НОВЕЛЛУ.bat", root), "utf8"),
-    readFile(new URL("public/corridor.png", root)),
+    readFile(new URL("public/corridor.jpg", root)),
+    readFile(new URL("android/icon-source/rational-seed-launcher-1.9.2.png", root)),
   ]);
   assert.match(story, /chooseEnding/);
   assert.match(story, /chapt(?:er|erTitle)/);
@@ -42,7 +43,8 @@ test("project contains the story, launcher, and generated art", async () => {
   }
   assert.doesNotMatch(story, /архив|выгруз|source-|ArchiveModal/i);
   assert.match(launcher, /vinext\.cmd/);
-  assert.ok(image.length > 500_000);
+  assert.ok(image.length > 100_000);
+  assert.ok(launcherIcon.length > 10_000);
 });
 
 test("update endpoint serves the manifest without caching or login requirements", async () => {

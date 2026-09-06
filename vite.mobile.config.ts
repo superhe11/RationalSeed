@@ -15,7 +15,7 @@ export default defineConfig({
       this.emitFile({ type: "asset", fileName: "build-info.json", source: JSON.stringify(release) });
     },
     async closeBundle() {
-      await copyFile(path.resolve(__dirname, "public/corridor.png"), path.resolve(__dirname, "dist-mobile/corridor.png"));
+      await copyFile(path.resolve(__dirname, "public/corridor.jpg"), path.resolve(__dirname, "dist-mobile/corridor.jpg"));
     },
   }],
   build: {

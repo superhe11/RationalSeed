@@ -42,7 +42,7 @@ button { color: inherit; touch-action: manipulation; }
   position: absolute;
   inset: -2%;
   z-index: -5;
-  background-image: url("/corridor.png");
+  background-image: url("/corridor.jpg");
   background-size: cover;
   background-position: center center;
   transition: filter 900ms ease, transform 1200ms ease, background-position 1200ms ease;

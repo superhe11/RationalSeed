@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 
 test("offline changelog covers every shipped version without duplicates", () => {
   const versions = [release, ...history];
-  assert.deepEqual(versions.map(item => item.versionName), ["1.9.1", "1.9.0", "1.8.0", "1.7.0", "1.6.0", "1.5.0", "1.4.2", "1.4.1", "1.4.0", "1.3.0", "1.2.0", "1.1.0", "1.0.0"]);
+  assert.deepEqual(versions.map(item => item.versionName), ["1.9.2", "1.9.1", "1.9.0", "1.8.0", "1.7.0", "1.6.0", "1.5.0", "1.4.2", "1.4.1", "1.4.0", "1.3.0", "1.2.0", "1.1.0", "1.0.0"]);
   assert.equal(new Set(versions.map(item => item.versionName)).size, versions.length);
   for (const version of versions) assert.ok(version.notes.length && version.notes.every(note => typeof note === "string" && note.length > 10));
 });

@@ -72,7 +72,7 @@ export function UpdatePanel({ updates }: { updates: ReturnType<typeof useUpdates
       <h3>Новая версия {latest.versionName}</h3>
       <ul className="patch-notes">{latest.notes.map(note => <li key={note}>{note}</li>)}</ul>
       {incompatible ? <p>Для этой версии нужна новая Android-оболочка. Получите новый APK у автора и установите поверх текущего приложения, не удаляя его.</p> : isAndroidApp() ? <>
-        <p className="panel-intro">{formatUpdateSize(latest.sizeBytes)} · После загрузки игра перезапустится. Сохранения останутся.</p>
+        <p className="panel-intro">Полный пакет контента: {formatUpdateSize(latest.sizeBytes)} · После загрузки игра перезапустится. Сохранения останутся.</p>
         <button className="primary-button" disabled={installing} onClick={() => void updates.install()}>{installing ? `Обновление · ${percent}%` : "Скачать и обновить"}</button>
       </> : <p>В браузере достаточно обновить страницу. В Android-приложении новая версия устанавливается прямо здесь.</p>}
     </> : <><h3>Что изменилось в {release.versionName}</h3><ul className="patch-notes">{release.notes.map(note => <li key={note}>{note}</li>)}</ul></>}
