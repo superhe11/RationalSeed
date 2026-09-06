@@ -8,7 +8,7 @@ export type AppRelease = { contentCode: number; versionName: string; runtimeVers
 
 export function formatUpdateSize(sizeBytes: number) {
   const megabytes = sizeBytes / 1024 / 1024;
-  return `${megabytes.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} МБ (${sizeBytes.toLocaleString("ru-RU")} байт)`;
+  return `${megabytes.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} МБ`;
 }
 
 export function validateRelease(value: unknown): AppRelease {

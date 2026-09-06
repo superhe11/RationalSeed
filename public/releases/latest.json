@@ -1,13 +1,13 @@
 {
-    "contentCode":  15,
-    "versionName":  "2.0.0",
+    "contentCode":  16,
+    "versionName":  "2.0.1",
     "runtimeVersion":  "android-2",
-    "publishedAt":  "2026-09-06T14:49:55.9154550Z",
+    "publishedAt":  "2026-09-06T15:10:25.7280808Z",
     "notes":  [
-                  "Большое расширение сюжетных развилок и финалов.",
-                  "Лёгкий режим и проводник по финалам после первого прохождения."
+                  "Упрощение отображения размера обновления.",
+                  "Новый базовый масштаб карты выбора."
               ],
-    "bundleUrl":  "https://rational-seed-novel.workspace-vo-3629.chatgpt.site/releases/novel-2.0.0-15.zip",
-    "sha256":  "d9a33c0ccc4315b4e527cb27cafbbd22ff07a6e377078edd5fdfc05433b28aaa",
-    "sizeBytes":  304918
+    "bundleUrl":  "https://rational-seed-novel.workspace-vo-3629.chatgpt.site/releases/novel-2.0.1-16.zip",
+    "sha256":  "0d5b8fc8dc67acb3c74a210102f3f7f5aab68bfdc90aff312fafc535274f867c",
+    "sizeBytes":  304930
 }

@@ -15,7 +15,9 @@ export function RouteMap({ library, current, hasRun }: { library: Library; curre
   const [reveal, setReveal] = useState(false);
   const [onlyClosed, setOnlyClosed] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
-  const [zoom, setZoom] = useState(1);
+  // 65% was the last readable compact scale. It is now the visual baseline
+  // called 100%, so the picker speaks in relative rather than legacy values.
+  const [zoom, setZoom] = useState(.65);
   const viewport = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; left: number } | null>(null);
   const run = useMemo(() => hasRun ? routeProgress(current) : { visited: [], decisions: [] }, [current, hasRun]);
@@ -26,7 +28,7 @@ export function RouteMap({ library, current, hasRun }: { library: Library; curre
   const initialId = useRef(activeId || "prologue");
   useEffect(() => {
     const media = window.matchMedia("(max-width: 820px)");
-    const resize = () => { setCompact(media.matches); setZoom(media.matches ? .85 : 1); };
+    const resize = () => { setCompact(media.matches); setZoom(.65); };
     resize(); media.addEventListener("change", resize);
     return () => media.removeEventListener("change", resize);
   }, []);
@@ -62,7 +64,7 @@ export function RouteMap({ library, current, hasRun }: { library: Library; curre
     <div className="tree-toolbar">
       <select className="tree-chapter-select" aria-label="Перейти к главе" defaultValue="" onChange={event => { jump(event.target.value); event.target.value = ""; }}><option value="" disabled>К главе…</option>{chapters.map(({ chapter, node }) => <option key={chapter} value={node.id}>{story[node.source].chapterTitle}</option>)}<option value={`ending:${Object.keys(endingNodes)[0]}`}>Финалы</option></select>
       <button disabled={!hasRun} onClick={() => jump(activeId)} aria-label="К текущей сцене" title="К текущей сцене">◎</button>
-      <select aria-label="Масштаб древа" value={zoom} onChange={event => changeZoom(Number(event.target.value))}><option value={.65}>65%</option><option value={.85}>85%</option><option value={1}>100%</option><option value={1.25}>125%</option></select>
+      <select aria-label="Масштаб древа" value={zoom} onChange={event => changeZoom(Number(event.target.value))}><option value={.325}>50%</option><option value={.4875}>75%</option><option value={.65}>100%</option><option value={.8125}>125%</option></select>
     </div>
     {/* Keyboard focus lets keyboard-only users scroll the two-dimensional map. */}
     {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
