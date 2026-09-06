@@ -1,13 +1,13 @@
 {
-    "contentCode":  16,
-    "versionName":  "2.0.1",
+    "contentCode":  17,
+    "versionName":  "2.1.0",
     "runtimeVersion":  "android-2",
-    "publishedAt":  "2026-09-06T15:10:25.7280808Z",
+    "publishedAt":  "2026-09-06T17:17:46.8819449Z",
     "notes":  [
-                  "Упрощение отображения размера обновления.",
-                  "Новый базовый масштаб карты выбора."
+                  "Переработка сюжетных маршрутов и реальных последствий выборов.",
+                  "Обновление главы НИИ и упрощение карты выборов."
               ],
-    "bundleUrl":  "https://rational-seed-novel.workspace-vo-3629.chatgpt.site/releases/novel-2.0.1-16.zip",
-    "sha256":  "0d5b8fc8dc67acb3c74a210102f3f7f5aab68bfdc90aff312fafc535274f867c",
-    "sizeBytes":  304930
+    "bundleUrl":  "https://rational-seed-novel.workspace-vo-3629.chatgpt.site/releases/novel-2.1.0-17.zip",
+    "sha256":  "66ecab0294f4a3b9a1eea712cc16fe987a097caf899bdd8541db7a9a8afc0a65",
+    "sizeBytes":  304955
 }

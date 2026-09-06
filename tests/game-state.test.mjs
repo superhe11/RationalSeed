@@ -96,17 +96,22 @@ test("all nodes and endings remain reachable; every choice has a valid target", 
   }
   assert.equal(nodes.size, Object.keys(story).length);
   assert.deepEqual([...endings].sort(), Object.keys(endingNodes).sort());
-  assert.ok(branchCount >= 170, `expected at least 170 real branching scenes, got ${branchCount}`);
-  assert.ok(choiceCount >= 680, `expected at least 680 answer paths, got ${choiceCount}`);
+  assert.ok(branchCount >= 40, `expected a substantial authored route graph, got ${branchCount}`);
+  assert.ok(choiceCount >= 160, `expected a substantial authored choice set, got ${choiceCount}`);
+  assert.notEqual(story.target_study.next, "first_signal");
+  assert.notEqual(story.round_stop.next, "chorus_notice");
+  assert.notEqual(story.no_stop.next, "yana_proxy");
+  assert.notEqual(story.varya_check.next, "varya_intimacy");
+  assert.notEqual(story.parser_close.next, "dating_profile");
+  assert.notEqual(story.club_play.next, "club_no");
 });
 
-test("late game guide maps a concrete highlighted answer for every ending", () => {
-  for (const endingId of Object.keys(endingNodes)) {
-    const rootChoice = guideChoiceIndex("verdict_root", endingId);
-    assert.ok(Number.isInteger(rootChoice) && rootChoice >= 0 && rootChoice < 4, endingId);
+test("final guide highlights authored route decisions rather than a synthetic verdict tree", () => {
+  for (const [endingId, index] of [["exit", 0], ["mirror", 1], ["protocol", 2], ["stage_empty", 3]]) {
+    assert.equal(guideChoiceIndex("therapist", endingId), index);
   }
-  for (const [endingId, index] of [["subject", 0], ["pause", 1], ["exit", 2], ["mirror", 3]]) {
-    assert.equal(guideChoiceIndex("verdict_000", endingId), index);
+  for (const [endingId, index] of [["subject", 0], ["pause", 1], ["stage_empty", 2], ["stage_music", 3]]) {
+    assert.equal(guideChoiceIndex("last_sheet", endingId), index);
   }
 });
 
