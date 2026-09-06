@@ -6,14 +6,15 @@ import { endingHints, type Library, type SavedGame, type SaveState } from "./sav
 import { RouteMap } from "./route-map";
 import { achievements, unlockedAchievements } from "./achievements";
 
-export type Panel = "menu" | "saves" | "map" | "endings" | "achievements" | "updates";
-const panelLabels: Record<Panel, string> = { menu: "Меню", saves: "Сохранения", map: "Карта", endings: "Концовки", achievements: "Достижения", updates: "Обновления" };
+export type Panel = "menu" | "saves" | "map" | "endings" | "achievements" | "settings" | "updates";
+const panelLabels: Record<Panel, string> = { menu: "Меню", saves: "Сохранения", map: "Карта", endings: "Концовки", achievements: "Достижения", settings: "Настройки", updates: "Обновления" };
 type Props = {
   panel: Panel; onPanel: (panel: Panel) => void; onClose: () => void;
   library: Library; currentSave: SaveState; canSave: boolean; onLoad: (save: SaveState) => void;
   onSave: (index: number) => void; onDelete: (index: number) => void;
   onReset: () => void; onTitle: () => void; soundOn: boolean; onSound: () => void;
-  showHud: boolean; onHud: () => void; locked: boolean; updateContent: ReactNode;
+  showHud: boolean; onHud: () => void; settingsUnlocked: boolean; discoveryMode: boolean; onDiscoveryMode: () => void;
+  guidedEnding?: string; onGuidedEnding: (endingId: string | undefined) => void; locked: boolean; updateContent: ReactNode;
 };
 
 export function GamePanel(props: Props) {
@@ -89,6 +90,14 @@ export function GamePanel(props: Props) {
             </article>;
           })}</div>
         </>}
+        {props.panel === "settings" && <section className="settings-panel">
+          {!props.settingsUnlocked ? <p className="panel-intro">Лёгкий режим и проводник по финалам откроются после первого прохождения.</p> : <>
+            <p className="panel-intro">Помощники не меняют сюжет и не открывают закрытые сцены. Они только подсвечивают ходы.</p>
+            <label className="setting-toggle"><input type="checkbox" checked={props.discoveryMode} onChange={props.onDiscoveryMode} /><span><b>Лёгкий режим</b><small>Подсвечивать ответы, которых ещё не было ни в одном прохождении.</small></span></label>
+            <label className="setting-select"><span><b>Проводник по финалу</b><small>Показывает один конкретный маршрут к выбранному финалу.</small></span><select value={props.guidedEnding ?? ""} onChange={event => props.onGuidedEnding(event.target.value || undefined)}><option value="">Не выбран</option>{Object.entries(endingNodes).map(([id, ending]) => <option key={id} value={id}>{ending.chapterTitle.replace("Финал · ", "")}</option>)}</select></label>
+            {props.guidedEnding && <p className="panel-footnote">Золотая рамка — ход проводника. Если он закрыт показателями, сначала выбери другой путь и измени состояние Саши.</p>}
+          </>}
+        </section>}
         {props.panel === "map" && <RouteMap library={props.library} current={props.currentSave} hasRun={props.canSave} />}
         {props.panel === "updates" && props.updateContent}
       </>}

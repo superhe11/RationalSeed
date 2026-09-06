@@ -1,4 +1,4 @@
-import { story, endingNodes } from "./story.ts";
+import { story, endingNodes, standardEndingIds } from "./story.ts";
 
 export type GraphNode = { id: string; kind: "scene" | "choice" | "ending" | "resolver"; source: string; index?: number; chapter: number; label: string; x: number; y: number };
 export type GraphEdge = { from: string; to: string; decision?: string };
@@ -22,11 +22,11 @@ export function buildRouteGraph(compact = false) {
     });
     else if (node.next) targets(node.next).forEach(to => edges.push({ from: node.id, to }));
   }
-  // A single junction replaces the old 4×N mesh from final answers to every
-  // stat-based ending. It matches the game logic and keeps the lower tree legible.
+  // A single junction is only for endings still chosen by the accumulated
+  // stats. Direct branches are drawn directly to their ending instead.
   if (edges.some(edge => edge.to === "resolve")) {
     nodes.push({ id: "resolve", kind: "resolver", source: "resolve", chapter: 10, label: "Итог по пути", x: 0, y: 0 });
-    Object.keys(endingNodes).filter(id => !["stage_music", "stage_empty"].includes(id)).forEach(id => edges.push({ from: "resolve", to: `ending:${id}` }));
+    standardEndingIds.forEach(id => edges.push({ from: "resolve", to: `ending:${id}` }));
   }
   for (const [id, node] of Object.entries(endingNodes)) nodes.push({ id: `ending:${id}`, kind: "ending", source: id, chapter: node.chapter, label: node.chapterTitle, x: 0, y: 0 });
   const byId = new Map(nodes.map(node => [node.id, node]));

@@ -17,6 +17,7 @@ import {
   choiceCount,
   chooseEnding,
   endingNodes,
+  guideChoiceIndex,
   initialStats,
   mainChapterCount,
   story,
@@ -97,6 +98,7 @@ export default function Home() {
   const libraryRef = useRef(library);
   const [notice, setNotice] = useState("");
   const [panel, setPanel] = useState<Panel | null>(null);
+  const [completionNotice, setCompletionNotice] = useState(false);
   const updates = useUpdates(ready && introAccepted, () => setPanel("updates"));
   const ambience = useRef<ReturnType<typeof createAmbience>>(null);
 
@@ -155,6 +157,13 @@ export default function Home() {
     const frame = requestAnimationFrame(() => { void markAppReady().catch(() => setNotice("Не удалось подтвердить запуск обновления. При следующем старте возможен откат к предыдущей версии.")); });
     return () => cancelAnimationFrame(frame);
   }, [ready]);
+
+  useEffect(() => {
+    if (!ready || !started || !endingId || library.settings.completionNoticeSeen) return;
+    const next = { ...libraryRef.current, settings: { ...libraryRef.current.settings, completionNoticeSeen: true } };
+    commitLibrary(next);
+    setCompletionNotice(true);
+  }, [endingId, library.settings.completionNoticeSeen, ready, started, commitLibrary]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -320,7 +329,10 @@ export default function Home() {
               <div className="choices">
                 {node.choices.map((choice, index) => {
                   const lockReason = choiceLockReason(stats, choice, decisions);
-                  return <button key={choice.label} className={lockReason ? "choice-locked" : undefined} disabled={Boolean(lockReason)} onClick={() => selectChoice(choice)}>
+                  const decisionId = `${node.id}:${index}`;
+                  const isNew = library.unlocked.length > 0 && library.settings.discoveryMode && !library.decisions.includes(decisionId);
+                  const isGuided = library.unlocked.length > 0 && library.settings.guidedEnding && guideChoiceIndex(node.id, library.settings.guidedEnding) === index;
+                  return <button key={choice.label} className={[lockReason ? "choice-locked" : "", isNew ? "choice-new" : "", isGuided ? "choice-guided" : ""].filter(Boolean).join(" ") || undefined} disabled={Boolean(lockReason)} onClick={() => selectChoice(choice)}>
                     <span className="choice-index">0{index + 1}</span>
                     <span className="choice-copy"><b>{choice.label}</b><small>{lockReason ?? choice.consequence}</small></span>
                     <span className="choice-arrow" aria-hidden="true">→</span>
@@ -340,6 +352,14 @@ export default function Home() {
         </>
       )}
       {notice && <div className="storage-notice" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Закрыть сообщение">×</button></div>}
+      {completionNotice && <div className="completion-notice" role="dialog" aria-modal="true" aria-labelledby="completion-heading">
+        <section>
+          <span>ПЕРВОЕ ПРОХОЖДЕНИЕ</span>
+          <h2 id="completion-heading">История пройдена</h2>
+          <p>В настройках теперь доступны лёгкий режим и проводник по финалам. Первый подсвечивает ответы, которых ещё не было в твоих прохождениях. Второй ведёт по одному из рабочих маршрутов к выбранной концовке.</p>
+          <div><button className="primary-button" onClick={() => { setCompletionNotice(false); setPanel("settings"); }}>Открыть настройки</button><button className="text-button" onClick={() => setCompletionNotice(false)}>Позже</button></div>
+        </section>
+      </div>}
       {updates.diagnostic && !panel && introAccepted && <div className="storage-notice" role="status">Не удалось проверить обновления.<button onClick={() => setPanel("updates")}>Подробнее</button></div>}
       {!introAccepted && <IntroNotice onContinue={() => setIntroAccepted(true)} />}
       {panel && <GamePanel
@@ -356,6 +376,10 @@ export default function Home() {
         }}
         onReset={reset} onTitle={() => { setStarted(false); setPanel(null); }}
         soundOn={soundOn} onSound={toggleSound} showHud={showHud} onHud={() => setShowHud(value => !value)}
+        settingsUnlocked={library.unlocked.length > 0} discoveryMode={library.settings.discoveryMode}
+        onDiscoveryMode={() => commitLibrary({ ...libraryRef.current, settings: { ...libraryRef.current.settings, discoveryMode: !libraryRef.current.settings.discoveryMode } })}
+        guidedEnding={library.settings.guidedEnding}
+        onGuidedEnding={guidedEnding => commitLibrary({ ...libraryRef.current, settings: { ...libraryRef.current.settings, guidedEnding } })}
         locked={updates.installing} updateContent={<UpdatePanel updates={updates} />}
       />}
     </main>

@@ -1,13 +1,13 @@
 {
-    "contentCode":  14,
-    "versionName":  "1.9.2",
+    "contentCode":  15,
+    "versionName":  "2.0.0",
     "runtimeVersion":  "android-2",
-    "publishedAt":  "2026-09-06T13:52:50.1733991Z",
+    "publishedAt":  "2026-09-06T14:49:55.9154550Z",
     "notes":  [
-                  "Новая иконка Android-приложения.",
-                  "Уточнение размера полного пакета обновления."
+                  "Большое расширение сюжетных развилок и финалов.",
+                  "Лёгкий режим и проводник по финалам после первого прохождения."
               ],
-    "bundleUrl":  "https://github.com/superhe11/RationalSeed/releases/download/v1.9.2/novel-1.9.2-14.zip",
-    "sha256":  "5d7be5eb6cb20e1447e0da9d69fa580d66b1473f5d50811d59828dd8922e63e9",
-    "sizeBytes":  299479
+    "bundleUrl":  "https://github.com/superhe11/RationalSeed/releases/download/v2.0.0/novel-2.0.0-15.zip",
+    "sha256":  "d9a33c0ccc4315b4e527cb27cafbbd22ff07a6e377078edd5fdfc05433b28aaa",
+    "sizeBytes":  304918
 }

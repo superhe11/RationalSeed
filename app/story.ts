@@ -13,7 +13,12 @@ export type Choice = {
   consequence: string;
   next: string;
   delta: StatDelta;
-  requires?: Partial<Pick<StoryStats, "boundaries" | "selfControl">> & { pressureMax?: number };
+  requires?: Partial<Pick<StoryStats, "boundaries" | "selfControl">> & {
+    pressureMax?: number;
+    pressureMin?: number;
+    boundariesMax?: number;
+    selfControlMax?: number;
+  };
   requiresPath?: { decisions: string[]; minimum: number };
   lockedText?: string;
 };
@@ -99,12 +104,21 @@ export function choiceLockReason(stats: StoryStats, choice: Choice, decisions: s
     if (needs.boundaries !== undefined && stats.boundaries < needs.boundaries) return choice.lockedText ?? `Нужны границы: ${needs.boundaries}/10.`;
     if (needs.selfControl !== undefined && stats.selfControl < needs.selfControl) return choice.lockedText ?? `Нужен самоконтроль: ${needs.selfControl}/10.`;
     if (needs.pressureMax !== undefined && stats.pressure > needs.pressureMax) return choice.lockedText ?? `Давление должно быть не выше ${needs.pressureMax}/10.`;
+    if (needs.pressureMin !== undefined && stats.pressure < needs.pressureMin) return choice.lockedText ?? `Для этого пути давление должно быть не ниже ${needs.pressureMin}/10.`;
+    if (needs.boundariesMax !== undefined && stats.boundaries > needs.boundariesMax) return choice.lockedText ?? `Этот путь закрыт: границы уже выше ${needs.boundariesMax}/10.`;
+    if (needs.selfControlMax !== undefined && stats.selfControl > needs.selfControlMax) return choice.lockedText ?? `Этот путь закрыт: самоконтроль уже выше ${needs.selfControlMax}/10.`;
   }
   if (choice.requiresPath) {
     const count = choice.requiresPath.decisions.filter(id => decisions.includes(id)).length;
     if (count < choice.requiresPath.minimum) return choice.lockedText ?? "Этот путь требует другой последовательности решений.";
   }
   return undefined;
+}
+
+const guidedChoices = new Map<string, Map<string, number>>();
+
+export function guideChoiceIndex(nodeId: string, endingId: string): number | undefined {
+  return guidedChoices.get(nodeId)?.get(endingId);
 }
 
 export const story: Record<string, StoryNode> = {
@@ -980,22 +994,22 @@ export const story: Record<string, StoryNode> = {
   therapy_go: n(
     "therapy_go", 10, "X · Человек без техподдержки", "10:47", "dawn", "Психотерапевт",
     "«Мы не будем искать способ гарантированно получить взаимность. Будем разбирать, почему её отсутствие для вас невыносимо». У Саши впервые нет уточнения для женщины в личке.",
-    "last_sheet",
+    "fate_repair_root",
   ),
   therapy_research: n(
     "therapy_research", 10, "X · Человек без техподдержки", "ТРИ НЕДЕЛИ СПУСТЯ", "laboratory", "Анастасия",
     "Он присылает таблицу из двенадцати специалистов. «К кому вы записались?» Ни к кому. «Тогда благодарить меня за помощь пока рано». Дима заглядывает в таблицу: «У тебя на выбор психолога больше сил ушло, чем на то, чтобы перестать спамить». Таблица получает тринадцатую строку.",
-    "last_sheet",
+    "fate_delay_root",
   ),
   therapy_photos: n(
     "therapy_photos", 10, "X · Человек без техподдержки", "12:20", "corridor", "Рассказчик",
     "Стрижка удачная. Фото тоже. Внутренний мир всё ещё приезжает без спроса сорока сообщениями, но теперь у курьера хороший ракурс.",
-    "last_sheet",
+    "fate_control_root",
   ),
   therapy_girlfriend: n(
     "therapy_girlfriend", 10, "X · Человек без техподдержки", "10:08", "night", "Сашка Савко",
     "Нужна умная, тёплая, тактильная, терпеливая и эмоционально доступная. Вопрос «а что получает она?» решается просто: меня настоящего.",
-    "last_sheet",
+    "fate_rage_root",
   ),
 
   last_sheet: q(
@@ -1121,6 +1135,176 @@ function addWideRoutes() {
 
 addWideRoutes();
 
+// Version 2.0 turns the late game into an actual tree.  The four routes do
+// not merely recolour one conversation: each decision opens a separate scene
+// and keeps its own tone until the final verdict tree.
+const fateRoutes = [
+  {
+    id: "repair", title: "XI · Неловкая работа", mood: "dawn" as Mood, speaker: "Рассказчик",
+    scenes: [
+      "После первой встречи Саша выходит без готового рецепта. Есть только неприятный вопрос: что именно он делает, когда не получает желаемого ответа.",
+      "На этой неделе он ловит себя на старой привычке раньше, чем она успевает стать очередным длинным сообщением.",
+      "Никакой медали за нормальное поведение не выдают. Зато один разговор не превращается в разбирательство.",
+    ],
+    options: [
+      ["Записать конкретный эпизод без оправданий", "Спросить, как это выглядело со стороны", "Оставить телефон в другой комнате", "Признать, что хочется всё объяснить"],
+      ["Не отвечать на эмоции до утра", "Сходить на встречу с Димой без повестки", "Закрыть заметку с чужими именами", "Сказать «понял» и действительно остановиться"],
+      ["Извиниться без просьбы простить", "Сделать что-то полезное без зрителей", "Не искать новую героиню для этой истории", "Договориться о следующей встрече со специалистом"],
+    ],
+    delta: [{ boundaries: 2, selfControl: 2, pressure: -1 }, { boundaries: 1, selfControl: 1, pressure: -1 }, { boundaries: 1, selfControl: 2, pressure: -2 }, { boundaries: 1, selfControl: 1, pressure: -1 }],
+  },
+  {
+    id: "delay", title: "XI · Отложенная жизнь", mood: "laboratory" as Mood, speaker: "Анастасия",
+    scenes: [
+      "Саша собрал ещё материалов, чем нужно для одного простого действия. В папке есть отзывы, рейтинги и ни одной даты записи.",
+      "Чем дольше решение лежит в таблице, тем легче перепутать подготовку с поступком.",
+      "Анастасия больше не спорит с формулировками. Она спрашивает только: что из этого было сделано в реальности.",
+    ],
+    options: [
+      ["Выбрать специалиста по трём критериям", "Попросить ещё неделю на сравнение", "Сделать таблицу красивее", "Написать знакомой, чтобы она решила за него"],
+      ["Поставить запись в календарь", "Открыть очередной отзыв", "Спросить Диму, почему он давит", "Перенести решение на после сессии"],
+      ["Прийти хотя бы на консультацию", "Оставить себе одну лазейку", "Объяснить бездействие сложностью случая", "Закрыть вкладки и вернуться к своей жизни"],
+    ],
+    delta: [{ boundaries: 1, selfControl: 2, pressure: -1 }, { selfControl: -1, pressure: 1 }, { selfControl: -1 }, { boundaries: -1, pressure: 2 }],
+  },
+  {
+    id: "control", title: "XI · Улучшенная версия", mood: "night" as Mood, speaker: "Рассказчик",
+    scenes: [
+      "Новое фото собирает лайки. Саша принимает это за сигнал, что система наконец начала работать. Система, как водится, ничего не обещала.",
+      "Он снова умеет красиво говорить о росте, пока каждый неудобный ответ записывается в отдельную графу.",
+      "У Димы заканчивается терпение раньше, чем у Саши заканчиваются улучшения профиля.",
+    ],
+    options: [
+      ["Переписать анкету честно", "Проверить, кто посмотрел сторис", "Добавить ещё одну воронку", "Спросить себя, зачем ему новые цифры"],
+      ["Позвать человека на обычную прогулку", "Подготовить три варианта подката", "Считать паузу плохой конверсией", "Скрыть чат, чтобы не обновлять его"],
+      ["Признать, что ему страшно быть одному", "Сделать из отказа кейс", "Попросить друга забрать телефон", "Открыть таблицу с новыми фильтрами"],
+    ],
+    delta: [{ boundaries: 1, selfControl: 1, pressure: -1 }, { pressure: 2, selfControl: -1 }, { pressure: 3, boundaries: -1 }, { boundaries: 1, selfControl: 1 }],
+  },
+  {
+    id: "rage", title: "XI · Право на обиду", mood: "chorus" as Mood, speaker: "Дима",
+    scenes: [
+      "Саша объясняет Диме, что его просто никто не понял. Дима не спорит с чувствами; он спорит с тем, что из них снова пытаются сделать чужую обязанность.",
+      "Обида умеет звучать как аргумент, особенно когда её повторяют достаточно долго. Фактами она от этого не становится.",
+      "Вечер заканчивается не победой в споре, а выбором: остановиться или найти ещё одного человека, на которого можно вылить объяснение.",
+    ],
+    options: [
+      ["Сказать Диме, что он перегнул", "Спросить, что именно было страшным", "Собрать все претензии в одно сообщение", "Уйти, хлопнув дверью"],
+      ["Не отправлять черновик", "Позвонить человеку, который не просил звонка", "Написать, что все обязаны объясниться", "Пройтись до остановки молча"],
+      ["Признать, что он зол", "Потребовать последнего разговора", "Показать друзьям свою версию", "Попросить Диму не оставлять его одного"],
+    ],
+    delta: [{ boundaries: 1, selfControl: 1, pressure: -1 }, { boundaries: 1, selfControl: 1 }, { pressure: 3, boundaries: -2 }, { pressure: 2, selfControl: -2 }],
+  },
+] as const;
+
+const fateEndingGroups = [
+  ["subject", "pause", "exit", "mirror"],
+  ["protocol", "exposed", "stage_music", "stage_empty"],
+  ["subject", "protocol", "exit", "stage_music"],
+  ["pause", "exposed", "mirror", "stage_empty"],
+] as const;
+
+const endingChoiceLabels: Record<string, string> = {
+  subject: "Остановиться и не требовать награды за остановку",
+  pause: "Сделать паузу реальным действием, а не красивым словом",
+  protocol: "Снова превратить человека в задачу",
+  exposed: "Отправить оправдание всем сразу",
+  stage_music: "Сделать поиск близости главным проектом жизни",
+  stage_empty: "Пойти доказывать свою правду в вуз",
+  exit: "Уйти из этой истории без последней реплики",
+  mirror: "Посмотреть на повторение и не назвать его случайностью",
+};
+
+const endingRequirements: Record<string, Choice["requires"]> = {
+  subject: { boundaries: 7, selfControl: 6, pressureMax: 4 },
+  protocol: { pressureMin: 6 },
+  exposed: { pressureMin: 8, boundariesMax: 3 },
+  stage_music: { pressureMin: 8, boundariesMax: 3 },
+  stage_empty: { pressureMin: 8, boundariesMax: 2 },
+  exit: { boundaries: 5, selfControl: 4, pressureMax: 5 },
+  mirror: { selfControl: 3 },
+};
+
+const endingLockText: Record<string, string> = {
+  subject: "Этот финал требует устойчивых границ, самоконтроля и низкого давления.",
+  protocol: "Для этого финала Саша должен последовательно разгонять давление.",
+  exposed: "Этот финал открывается только после долгого давления и разрушенных границ.",
+  stage_music: "Этот финал требует пути, где близость окончательно превращена в цель.",
+  stage_empty: "Этот финал требует пути, где обида становится важнее всех людей вокруг.",
+  exit: "Этот путь требует хотя бы минимально научиться уходить без спектакля.",
+  mirror: "Этот путь открывается, когда Саша способен увидеть повторение, а не только чужую реакцию.",
+};
+
+const guidedIndex = (endingId: string, salt: number) => (Object.keys(endingChoiceLabels).indexOf(endingId) + salt) % 4;
+
+function addFateTrees() {
+  for (const route of fateRoutes) {
+    const addNode = (depth: number, path: string) => {
+      const id = path ? `fate_${route.id}_${path}` : `fate_${route.id}_root`;
+      const choices = route.options[depth].map((label, index) => c(
+        label,
+        "Это решение ведёт в отдельную сцену и меняет, каким Саша придёт к следующему разговору.",
+        depth === route.options.length - 1 ? "verdict_root" : `fate_${route.id}_${path}${index}`,
+        route.delta[index],
+      ));
+      story[id] = q(
+        id, 11, route.title, `ПОСЛЕ РЕШЕНИЯ · ${depth + 1}/3`, route.mood, route.speaker,
+        `${route.scenes[depth]} ${path ? `До этого он выбрал маршрут ${path.split("").map(value => Number(value) + 1).join(" → ")}. Обратной редакции этого момента нет.` : "Первый ход определит, какую версию этого разговора он увидит дальше."}`,
+        choices,
+      );
+      guidedChoices.set(id, new Map(Object.keys(endingChoiceLabels).map(endingId => [endingId, guidedIndex(endingId, depth + path.length)])));
+      if (depth < route.options.length - 1) for (let index = 0; index < 4; index += 1) addNode(depth + 1, `${path}${index}`);
+    };
+    addNode(0, "");
+  }
+
+  const addVerdict = (depth: number, path: string) => {
+    const id = path ? `verdict_${path}` : "verdict_root";
+    if (depth === 3) {
+      const targets = fateEndingGroups[Number(path[0])];
+      const choices = targets.map((endingId, index) => {
+        const legacyBridge = path === "333" && index === 3;
+        return c(
+        legacyBridge ? "Открыть старый список и выбрать последнюю реплику" : endingChoiceLabels[endingId],
+        "Это не меняет оттенок эпилога — это выбирает его напрямую.",
+        legacyBridge ? "last_sheet" : `ending:${endingId}`,
+        endingId === "subject" || endingId === "exit" ? { boundaries: 2, selfControl: 2, pressure: -2 } : endingId === "pause" || endingId === "mirror" ? { selfControl: 1, pressure: -1 } : { pressure: 2, boundaries: -1 },
+        endingRequirements[endingId], endingLockText[endingId],
+      ); });
+      story[id] = q(
+        id, 12, "XII · Последний выбор", `РАЗВИЛКА · ${path.split("").map(value => Number(value) + 1).join(" → ")}`, "chorus", "Рассказчик",
+        "Все предыдущие решения остаются в памяти, но здесь прятаться за шкалы уже нельзя. Один ответ задаёт конец этой версии истории.",
+        choices,
+      );
+      guidedChoices.set(id, new Map(targets.map((endingId, index) => [endingId, index])));
+      return;
+    }
+    const choices = Array.from({ length: 4 }, (_, index) => c(
+      ["Назвать происходящее своим именем", "Спросить, чего хочет другой человек", "Снова собрать объяснение", "Сделать паузу перед следующим шагом"][index],
+      "Следующий узел остаётся отдельной веткой: выбранный ход не склеится с соседними.",
+      `verdict_${path}${index}`,
+      index === 0 ? { boundaries: 1, selfControl: 1, pressure: -1 } : index === 1 ? { boundaries: 1 } : index === 2 ? { pressure: 2, selfControl: -1 } : { selfControl: 1 },
+    ));
+    story[id] = q(
+      id, 12, "XII · Последний выбор", `ПОСЛЕДСТВИЯ · ${depth + 1}/4`, "chorus", "Рассказчик",
+      depth === 0
+        ? "Четыре дороги привели Сашу к одной точке, но не к одному выводу. Теперь он выбирает не реплику, а направление собственной истории."
+        : `Ветка ${path.split("").map(value => Number(value) + 1).join(" → ")} не растворилась в общей сцене. Здесь всё ещё можно свернуть, но нельзя сделать вид, что предыдущего хода не было.`,
+      choices,
+    );
+    const guide = new Map<string, number>();
+    for (const endingId of Object.keys(endingChoiceLabels)) {
+      const group = fateEndingGroups.findIndex(items => items.includes(endingId as never));
+      guide.set(endingId, depth === 0 ? Math.max(0, group) : guidedIndex(endingId, depth + path.length));
+    }
+    guidedChoices.set(id, guide);
+    for (let index = 0; index < 4; index += 1) addVerdict(depth + 1, `${path}${index}`);
+  };
+  addVerdict(0, "");
+}
+
+addFateTrees();
+
 export const endingNodes: Record<string, StoryNode> = {
   subject: n(
     "subject", 12, "Финал · Сам себе переводчик", "БЕЗ ГАРАНТИЙ", "dawn", "Рассказчик",
@@ -1158,7 +1342,21 @@ export const endingNodes: Record<string, StoryNode> = {
     undefined,
     "Когда за обидой стоит привычка обвинять всех вокруг, даже пустой чехол становится угрозой, а не метафорой.",
   ),
+  exit: n(
+    "exit", 12, "Финал · Без последней реплики", "УТРО ПОСЛЕ", "dawn", "Рассказчик",
+    "Саша не получает правильного финального слова, одобрения зала или обещания, что теперь всё будет легко. Он просто закрывает чат, идёт домой и не превращает ещё один вечер в попытку кого-то догнать. Это не победа. Это впервые не продолжение того же цикла.",
+    undefined,
+    "Иногда самый взрослый поступок выглядит скучно: не написать, не объяснить, не потребовать ответа.",
+  ),
+  mirror: n(
+    "mirror", 12, "Финал · Зеркало без фильтра", "НЕУДОБНАЯ ЗАПИСЬ", "spring", "Рассказчик",
+    "Саша перечитывает собственные сообщения без спасительного контекста в голове. В них нет тайного героя, которого все несправедливо не поняли. Есть повторение: он торопит, давит, объясняет за других и злится, когда его не назначают главным персонажем. Он не исправился за минуту. Но хотя бы перестал называть это случайностью.",
+    undefined,
+    "Увидеть паттерн — ещё не изменить его. Но без этого шага любое «я работаю над собой» остаётся дизайном обложки.",
+  ),
 };
+
+export const standardEndingIds = ["subject", "pause", "protocol", "exposed"] as const;
 
 export function chooseEnding(stats: StoryStats): keyof typeof endingNodes {
   if (stats.pressure >= 9 && stats.boundaries <= 2) return "exposed";

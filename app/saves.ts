@@ -5,10 +5,11 @@ export const LEGACY_KEY = "rational-seed-save-v3";
 export const SLOT_COUNT = 6;
 export type SaveState = { nodeId: string; stats: StoryStats; history: string[]; decisions?: string[]; endingId?: string };
 export type SavedGame = SaveState & { savedAt: string };
-export type Library = { schema: 1; auto: SavedGame | null; slots: (SavedGame | null)[]; unlocked: string[]; visited: string[]; decisions: string[] };
+export type LibrarySettings = { discoveryMode: boolean; guidedEnding?: string; completionNoticeSeen: boolean };
+export type Library = { schema: 1; auto: SavedGame | null; slots: (SavedGame | null)[]; unlocked: string[]; visited: string[]; decisions: string[]; settings: LibrarySettings };
 type StorageReader = Pick<Storage, "getItem">;
 export const freshGame = (): SaveState => ({ nodeId: "prologue", stats: { ...initialStats }, history: [], decisions: [] });
-export const emptyLibrary = (): Library => ({ schema: 1, auto: null, slots: Array(SLOT_COUNT).fill(null), unlocked: [], visited: [], decisions: [] });
+export const emptyLibrary = (): Library => ({ schema: 1, auto: null, slots: Array(SLOT_COUNT).fill(null), unlocked: [], visited: [], decisions: [], settings: { discoveryMode: false, completionNoticeSeen: false } });
 const owns = (object: object, key: unknown): key is string => typeof key === "string" && Object.hasOwn(object, key);
 
 export function validDecision(value: unknown): value is string {
@@ -64,6 +65,12 @@ export function readLibrary(storage: StorageReader): { library: Library; warning
       library.unlocked = [...new Set<string>(data.unlocked.filter((id: unknown) => owns(endingNodes, id)))];
       library.visited = Array.isArray(data.visited) ? data.visited.filter((id: unknown) => owns(story, id)) : [];
       library.decisions = Array.isArray(data.decisions) ? data.decisions.filter(validDecision) : [];
+      const savedSettings = data.settings && typeof data.settings === "object" ? data.settings as Partial<LibrarySettings> : {};
+      library.settings = {
+        discoveryMode: savedSettings.discoveryMode === true,
+        guidedEnding: typeof savedSettings.guidedEnding === "string" && owns(endingNodes, savedSettings.guidedEnding) ? savedSettings.guidedEnding : undefined,
+        completionNoticeSeen: savedSettings.completionNoticeSeen === true,
+      };
       // A save loaded from an older version may already contain a completed ending.
       for (const save of [library.auto, ...library.slots]) {
         if (save?.endingId && !library.unlocked.includes(save.endingId)) library.unlocked.push(save.endingId);
@@ -108,4 +115,6 @@ export const endingHints: Record<string, string> = {
   exposed: "Максимум давления, минимум уважения к границам. Остальные наконец сравнят заметки.",
   stage_music: "Последовательно превращать давление в жизненную стратегию — и в конце выбрать систему вместо людей.",
   stage_empty: "Пройти цепочку худших решений, прийти в вуз с пустым чехлом и обвинить в своей обиде всех вокруг.",
+  exit: "Не искать последней реплики, не требовать награды за остановку и уйти без нового спектакля.",
+  mirror: "Увидеть повторяющийся паттерн в собственных словах и не назвать его случайностью.",
 };

@@ -1,13 +1,13 @@
 {
-  "versionCode": 13,
-  "contentCode": 14,
+  "versionCode": 14,
+  "contentCode": 15,
   "runtimeVersion": "android-2",
-  "versionName": "1.9.2",
+  "versionName": "2.0.0",
   "githubRepository": "superhe11/RationalSeed",
   "updateManifestUrl": "https://raw.githubusercontent.com/superhe11/RationalSeed/updates/latest.json",
   "updateOrigin": "https://rational-seed-novel.workspace-vo-3629.chatgpt.site",
   "notes": [
-    "Новая иконка Android-приложения.",
-    "Уточнение размера полного пакета обновления."
+    "Большое расширение сюжетных развилок и финалов.",
+    "Лёгкий режим и проводник по финалам после первого прохождения."
   ]
 }

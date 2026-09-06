@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { emptyLibrary, freshGame, LIBRARY_KEY, LEGACY_KEY, readLibrary, routeProgress, snapshot, validateSave, withAutosave, writeLibrary } from "../app/saves.ts";
-import { branchCount, choiceCount, choiceLockReason, chooseEnding, endingNodes, story } from "../app/story.ts";
+import { branchCount, choiceCount, choiceLockReason, chooseEnding, endingNodes, guideChoiceIndex, story } from "../app/story.ts";
 import { release, validateRelease } from "../app/updates.ts";
 import { achievements, unlockedAchievements } from "../app/achievements.ts";
 
@@ -96,6 +96,18 @@ test("all nodes and endings remain reachable; every choice has a valid target", 
   }
   assert.equal(nodes.size, Object.keys(story).length);
   assert.deepEqual([...endings].sort(), Object.keys(endingNodes).sort());
+  assert.ok(branchCount >= 170, `expected at least 170 real branching scenes, got ${branchCount}`);
+  assert.ok(choiceCount >= 680, `expected at least 680 answer paths, got ${choiceCount}`);
+});
+
+test("late game guide maps a concrete highlighted answer for every ending", () => {
+  for (const endingId of Object.keys(endingNodes)) {
+    const rootChoice = guideChoiceIndex("verdict_root", endingId);
+    assert.ok(Number.isInteger(rootChoice) && rootChoice >= 0 && rootChoice < 4, endingId);
+  }
+  for (const [endingId, index] of [["subject", 0], ["pause", 1], ["exit", 2], ["mirror", 3]]) {
+    assert.equal(guideChoiceIndex("verdict_000", endingId), index);
+  }
 });
 
 test("late restorative choice stays closed until the stats support it", () => {
@@ -124,6 +136,14 @@ test("achievements use the shared library progress and keep locked goals visible
   assert.ok(unlockedAchievements(library).some(item => item.id === "four_roads"));
   assert.ok(unlockedAchievements(library).some(item => item.id === "long_way"));
   assert.equal(achievements.length, 7);
+});
+
+test("old libraries get safe defaults for post-completion route helpers", () => {
+  const old = { schema: 1, auto: null, slots: [], unlocked: ["subject"], visited: [], decisions: [] };
+  const library = readLibrary(storage({ [LIBRARY_KEY]: JSON.stringify(old) })).library;
+  assert.equal(library.settings.discoveryMode, false);
+  assert.equal(library.settings.guidedEnding, undefined);
+  assert.equal(library.settings.completionNoticeSeen, false);
 });
 
 const validRelease = () => ({ contentCode: 3, versionName: "1.2.0", runtimeVersion: "android-2", notes: ["Исправление"], bundleUrl: `${release.updateOrigin}/releases/novel-1.2.0-3.zip`, sha256: "a".repeat(64), publishedAt: "2026-09-05T20:00:00Z", sizeBytes: 2000 });
