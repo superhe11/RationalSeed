@@ -1,13 +1,13 @@
 {
-    "contentCode":  10,
-    "versionName":  "1.7.0",
+    "contentCode":  11,
+    "versionName":  "1.8.0",
     "runtimeVersion":  "android-2",
-    "publishedAt":  "2026-09-06T12:07:29.5988607Z",
+    "publishedAt":  "2026-09-06T12:40:30.1523723Z",
     "notes":  [
-                  "Добавление сюжетных сцен и развилок.",
-                  "Исправление переходов и формулировок."
+                  "Расширение сюжетных маршрутов и глав.",
+                  "Переработка восьмой главы и финалов."
               ],
-    "bundleUrl":  "https://rational-seed-novel.workspace-vo-3629.chatgpt.site/releases/novel-1.7.0-10.zip",
-    "sha256":  "5f24285b56d46f3df002caa8b4f34ad251bca78954abd001c8aa7157334578da",
-    "sizeBytes":  2140218
+    "bundleUrl":  "https://rational-seed-novel.workspace-vo-3629.chatgpt.site/releases/novel-1.8.0-11.zip",
+    "sha256":  "1bc1594d6fb9547dcb7e74e73ac9362eec977fae2b9a8cab1fda7f7a04dbf6e9",
+    "sizeBytes":  2142431
 }

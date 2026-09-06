@@ -104,8 +104,8 @@ test("late restorative choice stays closed until the stats support it", () => {
 });
 
 test("conditional bad endings require the matching route, not only high pressure", () => {
-  const caseRoute = story.guitar_choice.choices[2];
-  const sexRoute = story.guitar_choice.choices[3];
+  const caseRoute = story.last_sheet.choices[2];
+  const sexRoute = story.last_sheet.choices[3];
   const bad = { boundaries: 0, selfControl: 0, pressure: 10 };
   assert.ok(choiceLockReason(bad, caseRoute, []));
   assert.ok(choiceLockReason(bad, sexRoute, ["mentor_choice:3", "freshman_boundary:1"]));
