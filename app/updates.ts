@@ -14,12 +14,14 @@ export function validateRelease(value: unknown): AppRelease {
   const data = value as AppRelease;
   if (!data || !Number.isSafeInteger(data.contentCode) || data.contentCode < 1 || typeof data.versionName !== "string" || !/^\d+\.\d+\.\d+$/.test(data.versionName) || typeof data.runtimeVersion !== "string" || !Array.isArray(data.notes) || data.notes.length > 20 || !data.notes.every(note => typeof note === "string" && note.length <= 1000) || typeof data.sha256 !== "string" || !/^[a-f0-9]{64}$/i.test(data.sha256) || !Number.isFinite(Date.parse(data.publishedAt)) || !Number.isSafeInteger(data.sizeBytes) || data.sizeBytes <= 0 || data.sizeBytes > 25_000_000) throw new Error("Неверный формат обновления");
   const url = new URL(data.bundleUrl);
-  if (url.origin !== release.updateOrigin || !/^\/releases\/[a-zA-Z0-9._-]+\.zip$/.test(url.pathname) || url.search || url.hash || url.username || url.password) throw new Error("Недоверенный адрес обновления");
+  const legacy = url.origin === release.updateOrigin && /^\/releases\/[a-zA-Z0-9._-]+\.zip$/.test(url.pathname);
+  const github = url.origin === "https://github.com" && url.pathname === `/${release.githubRepository}/releases/download/v${data.versionName}/novel-${data.versionName}-${data.contentCode}.zip`;
+  if ((!legacy && !github) || url.search || url.hash || url.username || url.password) throw new Error("Недоверенный адрес обновления");
   return data;
 }
 
 export async function checkRelease(): Promise<AppRelease> {
-  const url = `${release.updateOrigin}/api/release?t=${Date.now()}`;
+  const url = `${release.updateManifestUrl}?t=${Date.now()}`;
   const webCheck = async () => {
     const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(15000), headers: { Accept: "application/json" } });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);

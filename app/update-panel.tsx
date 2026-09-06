@@ -70,7 +70,7 @@ export function UpdatePanel({ updates }: { updates: ReturnType<typeof useUpdates
     </> : <><h3>Что изменилось в {release.versionName}</h3><ul className="patch-notes">{release.notes.map(note => <li key={note}>{note}</li>)}</ul></>}
     {installing && <><progress aria-label="Загрузка обновления" max={100} value={percent} /><p className="panel-intro">Не закрывайте приложение до завершения загрузки.</p></>}
     <p role="status">{message}</p>
-    {updates.diagnostic && <details className="update-diagnostic"><summary>Причина ошибки</summary><p>{updates.diagnostic}</p><p>Если интернет работает, откройте этот адрес в браузере на том же телефоне:</p><a href={`${release.updateOrigin}/api/release`} target="_blank" rel="noreferrer">Проверить доступность сервера</a></details>}
+    {updates.diagnostic && <details className="update-diagnostic"><summary>Причина ошибки</summary><p>{updates.diagnostic}</p><p>Если интернет работает, откройте этот адрес в браузере на том же телефоне:</p><a href={release.updateManifestUrl} target="_blank" rel="noreferrer">Проверить доступность сервера GitHub</a></details>}
     <button className="text-button" disabled={checking || installing} onClick={() => void updates.check()}>{checking ? "Проверяю…" : "Проверить обновления"}</button>
     <p className="panel-footnote">Игра работает без интернета. Сеть нужна только для проверки и загрузки обновлений. Прогресс никуда не отправляется.</p>
   </section>;

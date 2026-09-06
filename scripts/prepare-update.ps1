@@ -40,4 +40,8 @@ $manifest = [ordered]@{
   sizeBytes = (Get-Item -LiteralPath $archivePath).Length
 }
 [IO.File]::WriteAllText((Join-Path $releaseDir 'latest.json'), ($manifest | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))
+# Keep the legacy manifest unchanged in shape and on its original origin:
+# already installed 1.1-1.3 clients trust only that origin during migration.
+$manifest.bundleUrl = "https://github.com/$($release.githubRepository)/releases/download/v$($release.versionName)/$archiveName"
+[IO.File]::WriteAllText((Join-Path $releaseDir 'github-latest.json'), ($manifest | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))
 Write-Output "Prepared $archiveName ($($manifest.sizeBytes) bytes). Publication is a separate step."
