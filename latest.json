@@ -1,13 +1,13 @@
 {
-    "contentCode":  9,
-    "versionName":  "1.6.0",
+    "contentCode":  10,
+    "versionName":  "1.7.0",
     "runtimeVersion":  "android-2",
-    "publishedAt":  "2026-09-06T11:38:44.3279120Z",
+    "publishedAt":  "2026-09-06T12:07:29.5988607Z",
     "notes":  [
-                  "Расширение сюжетных веток и условий финалов.",
-                  "Переработка дерева выборов."
+                  "Добавление сюжетных сцен и развилок.",
+                  "Исправление переходов и формулировок."
               ],
-    "bundleUrl":  "https://github.com/superhe11/RationalSeed/releases/download/v1.6.0/novel-1.6.0-9.zip",
-    "sha256":  "600d0eb63af7cd60db186fb15b4c075002eaac50ee193213f47305d8e0a9d1cb",
-    "sizeBytes":  2137951
+    "bundleUrl":  "https://github.com/superhe11/RationalSeed/releases/download/v1.7.0/novel-1.7.0-10.zip",
+    "sha256":  "5f24285b56d46f3df002caa8b4f34ad251bca78954abd001c8aa7157334578da",
+    "sizeBytes":  2140218
 }
