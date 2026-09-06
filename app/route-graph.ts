@@ -41,7 +41,9 @@ export function buildRouteGraph(compact = false) {
       return parents.length ? parents.reduce((sum, edge) => sum + byId.get(edge.from)!.y, 0) / parents.length : 0;
     };
     column.sort((a, b) => average(a) - average(b));
-    column.forEach((node, row) => { node.x = 16 + x * columnStep; node.y = 48 + (row + (rows - column.length) / 2) * rowStep; });
+    // Start every column at the top. Centering sparse early columns created a
+    // large empty mobile viewport before the first playable scene.
+    column.forEach((node, row) => { node.x = 16 + x * columnStep; node.y = 48 + row * rowStep; });
   });
   return { nodes, edges, nodeWidth, nodeHeight, width: columns.length * columnStep + 16, height: rows * rowStep + 64 };
 }

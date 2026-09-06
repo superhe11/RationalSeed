@@ -1,15 +1,13 @@
 {
-  "versionCode": 5,
-  "contentCode": 6,
+  "versionCode": 6,
+  "contentCode": 7,
   "runtimeVersion": "android-2",
-  "versionName": "1.4.1",
+  "versionName": "1.4.2",
   "githubRepository": "superhe11/RationalSeed",
   "updateManifestUrl": "https://raw.githubusercontent.com/superhe11/RationalSeed/updates/latest.json",
   "updateOrigin": "https://rational-seed-novel.workspace-vo-3629.chatgpt.site",
   "notes": [
-    "Мобильная карта занимает экран: компактная панель, настройки по кнопке, все главы остаются на едином горизонтальном древе.",
-    "Уменьшены расстояния между узлами на телефоне; при открытии карта центрируется на текущей сцене. Описание открывается поверх карты.",
-    "В разделе обновлений доступна офлайн-история патчноутов версий 1.0–1.4.1.",
-    "Версии APK и контента показаны отдельно. Новый APK сразу содержит 1.4.1 и адрес обновлений GitHub."
+    "Оптимизация интерфейса и мобильной карты.",
+    "Упрощение текста и патчноутов."
   ]
 }

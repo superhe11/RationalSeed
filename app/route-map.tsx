@@ -58,7 +58,7 @@ export function RouteMap({ library, current, hasRun }: { library: Library; curre
     {settings && <div id="tree-settings" className="tree-settings"><div className="map-options">
       <label><input type="checkbox" checked={onlyClosed} onChange={event => setOnlyClosed(event.target.checked)} /> Приглушить уже пройденное</label>
       <label><input type="checkbox" checked={reveal} onChange={event => setReveal(event.target.checked)} /> Раскрыть закрытые сцены (спойлеры)</label>
-    </div><p>Голубое — пройдено, золотое — текущая сцена, пунктир — закрыто. Все главы на одном полотне: двигай его пальцем в любую сторону.</p><p>Просмотр не меняет сейв. Общий прогресс сохраняется между играми; из старых сейвов восстанавливаются только однозначные переходы. Финал зависит от показателей.</p><button className="text-button" onClick={() => setSettings(false)}>Готово</button></div>}
+    </div><button className="text-button" onClick={() => setSettings(false)}>Готово</button></div>}
     <div className="tree-toolbar">
       <select className="tree-chapter-select" aria-label="Перейти к главе" defaultValue="" onChange={event => { jump(event.target.value); event.target.value = ""; }}><option value="" disabled>К главе…</option>{chapters.map(({ chapter, node }) => <option key={chapter} value={node.id}>{story[node.source].chapterTitle}</option>)}<option value={`ending:${Object.keys(endingNodes)[0]}`}>Финалы</option></select>
       <button disabled={!hasRun} onClick={() => jump(activeId)} aria-label="К текущей сцене" title="К текущей сцене">◎</button>
@@ -77,7 +77,6 @@ export function RouteMap({ library, current, hasRun }: { library: Library; curre
           const x1 = from.x + graph.nodeWidth, y1 = from.y + graph.nodeHeight / 2, x2 = to.x, y2 = to.y + graph.nodeHeight / 2;
           return <path key={`${edge.from}->${edge.to}`} className={passed ? "passed" : ""} d={`M${x1},${y1} C${x1 + (x2 - x1) / 2},${y1} ${x2 - (x2 - x1) / 2},${y2} ${x2},${y2}`} />;
         })}</svg>
-        {chapters.map(({ chapter, node }) => <span className="tree-chapter-label" key={chapter} style={{ left: node.x }}>{story[node.source].chapterTitle}</span>)}
         {graph.nodes.map(node => <button key={node.id} style={{ left: node.x, top: node.y, width: graph.nodeWidth, height: graph.nodeHeight }} className={`tree-node kind-${node.kind} ${done(node) ? "is-done" : "is-locked"} ${mode === "current" && node.id === activeId ? "is-active" : ""} ${onlyClosed && done(node) ? "is-muted" : ""}`} aria-pressed={selected === node.id} onClick={() => setSelected(node.id)}>
           <span>{mode === "current" && node.id === activeId ? "● Сейчас здесь" : done(node) ? "✓ Пройдено" : "○ Не пройдено"} · {node.kind === "choice" ? `Ответ ${node.index! + 1}` : node.kind === "ending" ? "Финал" : "Сцена"}</span>
           <b>{known(node) || node.kind === "ending" ? node.label : "Неизвестная сцена"}</b>
@@ -85,7 +84,7 @@ export function RouteMap({ library, current, hasRun }: { library: Library; curre
         </button>)}
       </div></div>
     </div>
-    <div className="tree-bottom"><button onClick={() => pan(-1)} aria-label="Прокрутить влево">←</button><span>Листай древо · нажми на сцену</span><button onClick={() => pan(1)} aria-label="Прокрутить вправо">→</button></div>
+    <div className="tree-bottom"><button onClick={() => pan(-1)} aria-label="Прокрутить влево">←</button><span>Древо выборов</span><button onClick={() => pan(1)} aria-label="Прокрутить вправо">→</button></div>
     {detail && <article className="tree-detail" aria-label="Описание сцены"><button className="tree-detail-close" aria-label="Закрыть описание" onClick={() => setSelected(null)}>×</button><h3>{known(detail) || detail.kind === "ending" ? detail.label : "Сцена пока закрыта"}</h3><p>{!known(detail) ? "Текст откроется после прохождения. Можно включить спойлеры в настройках." : detail.kind === "choice" ? `${detail.label} — ${story[detail.source].choices![detail.index!].consequence}` : detail.kind === "ending" ? endingNodes[detail.source].text : story[detail.source].text}</p></article>}
   </section>;
 }

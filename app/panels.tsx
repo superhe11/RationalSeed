@@ -41,14 +41,13 @@ export function GamePanel(props: Props) {
         <p>{confirmation.text}</p><div className="panel-actions"><button className="primary-button" onClick={() => { confirmation.run(); setConfirmation(null); }}>Подтвердить</button><button className="text-button" onClick={() => setConfirmation(null)}>Отмена</button></div>
       </section> : <>
         {props.panel === "menu" && <div className="menu-actions">
-          <button className="primary-button" onClick={props.onClose}>Вернуться</button>
+          <button className="text-button menu-return" onClick={props.onClose}>← К игре</button>
           <button onClick={props.onSound} aria-pressed={props.soundOn}>Звук: {props.soundOn ? "включён" : "выключен"}</button>
           <button onClick={props.onHud} aria-pressed={props.showHud}>Шкалы: {props.showHud ? "видны" : "скрыты"}</button>
           <button onClick={props.onTitle}>На титульный экран</button>
           <button onClick={() => setConfirmation({ text: "Начать заново? Автосейв заменится, но ручные сохранения и открытые концовки останутся.", run: props.onReset })}>Начать новую игру</button>
         </div>}
         {props.panel === "saves" && <>
-          <p className="panel-intro">Автосейв обновляется после каждой реплики. Ручные слоты не меняются, пока вы сами их не перезапишете.</p>
           <article className="save-slot"><h3>Автосохранение</h3><SaveDescription save={props.library.auto} />{props.library.auto && <button className="text-button" onClick={() => load(props.library.auto!)}>Загрузить автосохранение</button>}</article>
           <div className="slot-grid">{props.library.slots.map((save, index) => <article key={index} className="save-slot">
             <h3>Слот {index + 1}</h3><SaveDescription save={save} />
@@ -67,7 +66,7 @@ export function GamePanel(props: Props) {
           <h3>{viewing.chapterTitle}</h3><p className="dialogue-text">{viewing.text}</p><p className="aside">{viewing.aside}</p>
           <p className="panel-footnote">Это перечитывание. Ваш текущий прогресс не изменён.</p>
         </article> : <>
-          <p className="panel-intro">Открыто {props.library.unlocked.length} из {Object.keys(endingNodes).length}. Новая игра не сбрасывает коллекцию.</p>
+          <p className="panel-intro">Открыто {props.library.unlocked.length} из {Object.keys(endingNodes).length}.</p>
           <div className="ending-grid">{Object.entries(endingNodes).map(([id, ending], i) => {
             const unlocked = props.library.unlocked.includes(id);
             return <article key={id} className={`ending-card ${unlocked ? "unlocked" : "locked"}`}>

@@ -260,16 +260,12 @@ export default function Home() {
             Где-то между этими задачами рождается научный метод, который никто не просил.
           </p>
           <div className="title-rule" />
-          <p className="content-note">
-            Сатирическая история: сцены и диалоги вымышлены. Темы: навязчивое
-            общение, груминг неопытных девушек, сексуальное
-            давление, эмоциональная зависимость и хроническая неспособность остановиться.
-          </p>
           <button className="primary-button" disabled={!ready} onClick={() => setStarted(true)}>
             {library.auto ? "Продолжить историю" : "Начать эксперимент"}
             <span aria-hidden="true">↗</span>
           </button>
           <div className="title-links">
+            <button className="text-button" disabled={!ready} onClick={() => setPanel("menu")}>Меню</button>
             <button className="text-button" disabled={!ready} onClick={() => setPanel("saves")}>Сохранения</button>
             <button className="text-button" disabled={!ready} onClick={() => setPanel("endings")}>Концовки · {library.unlocked.length}/{Object.keys(endingNodes).length}</button>
             <button className="text-button" disabled={!ready} onClick={() => setPanel("map")}>Карта выборов</button>

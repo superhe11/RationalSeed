@@ -67,7 +67,7 @@ export function UpdatePanel({ updates }: { updates: ReturnType<typeof useUpdates
   const { latest, checking, installing, percent, message, available } = updates;
   const incompatible = latest && latest.runtimeVersion !== release.runtimeVersion;
   return <section className="updates-content">
-    <p className="panel-intro">Контент: {release.versionName}{nativeVersion && ` · APK: ${nativeVersion}`}<br />Обновления: GitHub</p>
+    <p className="panel-intro">Контент: {release.versionName}{nativeVersion && ` · APK: ${nativeVersion}`}</p>
     {available && latest ? <>
       <h3>Новая версия {latest.versionName}</h3>
       <ul className="patch-notes">{latest.notes.map(note => <li key={note}>{note}</li>)}</ul>
@@ -80,7 +80,6 @@ export function UpdatePanel({ updates }: { updates: ReturnType<typeof useUpdates
     <p role="status">{message}</p>
     {updates.diagnostic && <details className="update-diagnostic"><summary>Причина ошибки</summary><p>{updates.diagnostic}</p><p>Если интернет работает, откройте этот адрес в браузере на том же телефоне:</p><a href={release.updateManifestUrl} target="_blank" rel="noreferrer">Проверить доступность сервера GitHub</a></details>}
     <button className="text-button" disabled={checking || installing} onClick={() => void updates.check()}>{checking ? "Проверяю…" : "Проверить обновления"}</button>
-    <p className="panel-footnote">Игра работает без интернета. Сеть нужна только для проверки и загрузки обновлений. Прогресс никуда не отправляется.</p>
     <section className="release-history" aria-label="История обновлений"><h3>Все версии</h3>
       {[release, ...releaseHistory].map(item => <details key={item.versionName}><summary>{item.versionName} {item.versionName === release.versionName && <small>· установлена</small>}</summary><ul className="patch-notes">{item.notes.map(note => <li key={note}>{note}</li>)}</ul></details>)}
     </section>
