@@ -1,13 +1,13 @@
 {
-    "contentCode":  7,
-    "versionName":  "1.4.2",
+    "contentCode":  8,
+    "versionName":  "1.5.0",
     "runtimeVersion":  "android-2",
-    "publishedAt":  "2026-09-06T10:50:13.4805611Z",
+    "publishedAt":  "2026-09-06T11:15:19.9815814Z",
     "notes":  [
-                  "Оптимизация интерфейса и мобильной карты.",
-                  "Упрощение текста и патчноутов."
+                  "Расширение сюжетных веток и концовок.",
+                  "Добавление условий и режима чтения."
               ],
-    "bundleUrl":  "https://github.com/superhe11/RationalSeed/releases/download/v1.4.2/novel-1.4.2-7.zip",
-    "sha256":  "48b4d36f02f5a276a0186fc02471106b283a1fde4196d888ddf515ae9f083c97",
-    "sizeBytes":  2132895
+    "bundleUrl":  "https://github.com/superhe11/RationalSeed/releases/download/v1.5.0/novel-1.5.0-8.zip",
+    "sha256":  "4f40d2eb8cf98d6e8ad69f2090c9dbf98e0234f5212f47f4b4121d841d0156c6",
+    "sizeBytes":  2135766
 }
