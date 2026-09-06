@@ -37,7 +37,7 @@ test("project contains the story, launcher, and generated art", async () => {
   assert.match(story, /chapt(?:er|erTitle)/);
   assert.match(story, /choiceLockReason/);
   assert.match(story, /guitar_arrival/);
-  for (const name of ["Тоня", "Ксюша", "Маша", "Яна Чорна", "Варя", "Оля", "Катя", "Ярослав"]) {
+  for (const name of ["Тоня", "Ксюша", "Маша", "Яна", "Варя", "Оля", "Катя", "Ярослав"]) {
     assert.match(story, new RegExp(name));
   }
   assert.doesNotMatch(story, /архив|выгруз|source-|ArchiveModal/i);

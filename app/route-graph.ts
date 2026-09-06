@@ -1,6 +1,6 @@
 import { story, endingNodes } from "./story.ts";
 
-export type GraphNode = { id: string; kind: "scene" | "choice" | "ending"; source: string; index?: number; chapter: number; label: string; x: number; y: number };
+export type GraphNode = { id: string; kind: "scene" | "choice" | "ending" | "resolver"; source: string; index?: number; chapter: number; label: string; x: number; y: number };
 export type GraphEdge = { from: string; to: string; decision?: string };
 export function buildRouteGraph(compact = false) {
   const nodeWidth = compact ? 176 : 224;
@@ -11,7 +11,7 @@ export function buildRouteGraph(compact = false) {
   const rowStep = compact ? 140 : 166;
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
-  const targets = (next: string) => next === "resolve" ? Object.keys(endingNodes).map(id => `ending:${id}`) : [next];
+  const targets = (next: string) => next === "resolve" ? ["resolve"] : [next];
   for (const node of Object.values(story)) {
     nodes.push({ id: node.id, kind: "scene", source: node.id, chapter: node.chapter, label: node.speaker, x: 0, y: 0 });
     if (node.choices) node.choices.forEach((choice, index) => {
@@ -21,6 +21,12 @@ export function buildRouteGraph(compact = false) {
       targets(choice.next).forEach(to => edges.push({ from: id, to, decision: id }));
     });
     else if (node.next) targets(node.next).forEach(to => edges.push({ from: node.id, to }));
+  }
+  // A single junction replaces the old 4×N mesh from final answers to every
+  // stat-based ending. It matches the game logic and keeps the lower tree legible.
+  if (edges.some(edge => edge.to === "resolve")) {
+    nodes.push({ id: "resolve", kind: "resolver", source: "resolve", chapter: 10, label: "Итог по пути", x: 0, y: 0 });
+    Object.keys(endingNodes).filter(id => !["stage_music", "stage_empty"].includes(id)).forEach(id => edges.push({ from: "resolve", to: `ending:${id}` }));
   }
   for (const [id, node] of Object.entries(endingNodes)) nodes.push({ id: `ending:${id}`, kind: "ending", source: id, chapter: node.chapter, label: node.chapterTitle, x: 0, y: 0 });
   const byId = new Map(nodes.map(node => [node.id, node]));

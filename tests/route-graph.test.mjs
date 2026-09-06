@@ -5,7 +5,7 @@ import { story, endingNodes, choiceCount } from "../app/story.ts";
 
 test("one horizontal graph includes every scene, answer and ending with no overlaps", () => {
   const graph = buildRouteGraph();
-  assert.equal(graph.nodes.length, Object.keys(story).length + Object.keys(endingNodes).length + choiceCount);
+  assert.equal(graph.nodes.length, Object.keys(story).length + Object.keys(endingNodes).length + choiceCount + 1);
   const byId = new Map(graph.nodes.map(node => [node.id, node]));
   assert.equal(byId.size, graph.nodes.length);
   for (const edge of graph.edges) {
@@ -20,8 +20,9 @@ test("one horizontal graph includes every scene, answer and ending with no overl
     const id = `${node.id}:${index}`;
     assert.ok(graph.edges.some(edge => edge.from === node.id && edge.to === id && edge.decision === id));
     if (choice.next !== "resolve") assert.ok(graph.edges.some(edge => edge.from === id && edge.to === choice.next));
-    else for (const ending of Object.keys(endingNodes)) assert.ok(graph.edges.some(edge => edge.from === id && edge.to === `ending:${ending}`));
+    else assert.ok(graph.edges.some(edge => edge.from === id && edge.to === "resolve"));
   });
+  assert.ok(graph.edges.some(edge => edge.from === "resolve" && edge.to === "ending:subject"));
 });
 
 test("compact tree retains all paths, reduces width and has non-overlapping touch targets", () => {

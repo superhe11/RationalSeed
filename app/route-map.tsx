@@ -37,8 +37,8 @@ export function RouteMap({ library, current, hasRun }: { library: Library; curre
     });
     return () => cancelAnimationFrame(frame);
   }, [byId, compact, graph.nodeHeight]);
-  const done = (node: GraphNode) => node.kind === "choice" ? decisions.has(node.id) : node.kind === "ending" ? unlocked.has(node.source) : visited.has(node.source);
-  const known = (node: GraphNode) => reveal || (node.kind === "choice" ? visited.has(node.source) : done(node));
+  const done = (node: GraphNode) => node.kind === "choice" ? decisions.has(node.id) : node.kind === "ending" ? unlocked.has(node.source) : node.kind === "resolver" ? Boolean(current.endingId) : visited.has(node.source);
+  const known = (node: GraphNode) => node.kind === "resolver" || reveal || (node.kind === "choice" ? visited.has(node.source) : done(node));
   const jump = (id: string) => { const node = byId.get(id); const el = viewport.current; if (node && el) el.scrollTo({ left: Math.max(0, node.x * zoom - 16), top: Math.max(0, (node.y + graph.nodeHeight / 2) * zoom - el.clientHeight / 2), behavior: "smooth" }); };
   const changeZoom = (next: number) => {
     const el = viewport.current; if (!el) return;
@@ -78,13 +78,13 @@ export function RouteMap({ library, current, hasRun }: { library: Library; curre
           return <path key={`${edge.from}->${edge.to}`} className={passed ? "passed" : ""} d={`M${x1},${y1} C${x1 + (x2 - x1) / 2},${y1} ${x2 - (x2 - x1) / 2},${y2} ${x2},${y2}`} />;
         })}</svg>
         {graph.nodes.map(node => <button key={node.id} style={{ left: node.x, top: node.y, width: graph.nodeWidth, height: graph.nodeHeight }} className={`tree-node kind-${node.kind} ${done(node) ? "is-done" : "is-locked"} ${mode === "current" && node.id === activeId ? "is-active" : ""} ${onlyClosed && done(node) ? "is-muted" : ""}`} aria-pressed={selected === node.id} onClick={() => setSelected(node.id)}>
-          <span>{mode === "current" && node.id === activeId ? "● Сейчас здесь" : done(node) ? "✓ Пройдено" : "○ Не пройдено"} · {node.kind === "choice" ? `Ответ ${node.index! + 1}` : node.kind === "ending" ? "Финал" : "Сцена"}</span>
+          <span>{mode === "current" && node.id === activeId ? "● Сейчас здесь" : done(node) ? "✓ Пройдено" : "○ Не пройдено"} · {node.kind === "choice" ? `Ответ ${node.index! + 1}` : node.kind === "ending" ? "Финал" : node.kind === "resolver" ? "Слияние" : "Сцена"}</span>
           <b>{known(node) || node.kind === "ending" ? node.label : "Неизвестная сцена"}</b>
           <small>{node.kind === "scene" && known(node) ? story[node.source].date : "Нажми, чтобы посмотреть"}</small>
         </button>)}
       </div></div>
     </div>
     <div className="tree-bottom"><button onClick={() => pan(-1)} aria-label="Прокрутить влево">←</button><span>Древо выборов</span><button onClick={() => pan(1)} aria-label="Прокрутить вправо">→</button></div>
-    {detail && <article className="tree-detail" aria-label="Описание сцены"><button className="tree-detail-close" aria-label="Закрыть описание" onClick={() => setSelected(null)}>×</button><h3>{known(detail) || detail.kind === "ending" ? detail.label : "Сцена пока закрыта"}</h3><p>{!known(detail) ? "Текст откроется после прохождения. Можно включить спойлеры в настройках." : detail.kind === "choice" ? `${detail.label} — ${story[detail.source].choices![detail.index!].consequence}` : detail.kind === "ending" ? endingNodes[detail.source].text : story[detail.source].text}</p></article>}
+    {detail && <article className="tree-detail" aria-label="Описание сцены"><button className="tree-detail-close" aria-label="Закрыть описание" onClick={() => setSelected(null)}>×</button><h3>{known(detail) || detail.kind === "ending" ? detail.label : "Сцена пока закрыта"}</h3><p>{!known(detail) ? "Текст откроется после прохождения. Можно включить спойлеры в настройках." : detail.kind === "choice" ? `${detail.label} — ${story[detail.source].choices![detail.index!].consequence}` : detail.kind === "ending" ? endingNodes[detail.source].text : detail.kind === "resolver" ? "Здесь история сходится: обычные финалы определяются накопленными решениями и показателями." : story[detail.source].text}</p></article>}
   </section>;
 }

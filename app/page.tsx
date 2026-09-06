@@ -306,7 +306,7 @@ export default function Home() {
 
           </div>
 
-          <section key={node.id} className={`dialogue ${node.choices ? "has-choices" : ""} ${node.reading ? "reading-passage" : ""}`} aria-live="polite">
+          <section key={node.id} className={`dialogue ${node.choices ? "has-choices" : ""}`} aria-live="polite">
             <div className="speaker-row">
               <span className="speaker">{node.speaker}</span>
               <span className="node-count">{String(history.length + 1).padStart(2, "0")}</span>

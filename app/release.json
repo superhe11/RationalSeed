@@ -1,13 +1,13 @@
 {
-  "versionCode": 8,
-  "contentCode": 9,
+  "versionCode": 9,
+  "contentCode": 10,
   "runtimeVersion": "android-2",
-  "versionName": "1.6.0",
+  "versionName": "1.7.0",
   "githubRepository": "superhe11/RationalSeed",
   "updateManifestUrl": "https://raw.githubusercontent.com/superhe11/RationalSeed/updates/latest.json",
   "updateOrigin": "https://rational-seed-novel.workspace-vo-3629.chatgpt.site",
   "notes": [
-    "Расширение сюжетных веток и условий финалов.",
-    "Переработка дерева выборов."
+    "Добавление сюжетных сцен и развилок.",
+    "Исправление переходов и формулировок."
   ]
 }
