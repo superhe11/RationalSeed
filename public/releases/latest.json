@@ -1,13 +1,13 @@
 {
-    "contentCode":  18,
-    "versionName":  "2.1.1",
+    "contentCode":  19,
+    "versionName":  "2.1.2",
     "runtimeVersion":  "android-2",
-    "publishedAt":  "2026-09-06T17:54:26.7251937Z",
+    "publishedAt":  "2026-09-06T18:01:40.1825280Z",
     "notes":  [
-                  "Исправление проводника по финалам и условий доступности.",
-                  "Устранение ложных быстрых концовок после одной сцены."
+                  "Проводник по финалам от начала нового прохождения.",
+                  "Упрощение меню и исправления мобильного интерфейса."
               ],
-    "bundleUrl":  "https://rational-seed-novel.workspace-vo-3629.chatgpt.site/releases/novel-2.1.1-18.zip",
-    "sha256":  "ddeb16340774ae5a66fe08567f0443bbab34f0b543d9035747bc0f937060ece4",
-    "sizeBytes":  306430
+    "bundleUrl":  "https://rational-seed-novel.workspace-vo-3629.chatgpt.site/releases/novel-2.1.2-19.zip",
+    "sha256":  "e5688df6e944ddfd0bd17df0d15663049e74bf9b47b2b4358da53261d5d3c0c3",
+    "sizeBytes":  306634
 }

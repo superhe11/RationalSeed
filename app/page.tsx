@@ -331,7 +331,7 @@ export default function Home() {
                   const lockReason = choiceLockReason(stats, choice, decisions);
                   const decisionId = `${node.id}:${index}`;
                   const isNew = library.unlocked.length > 0 && library.settings.discoveryMode && !library.decisions.includes(decisionId);
-                  const isGuided = library.unlocked.length > 0 && library.settings.guidedEnding && guideChoiceIndexForState(node.id, library.settings.guidedEnding, stats, decisions) === index;
+                  const isGuided = library.unlocked.length > 0 && library.settings.guideEnabled && library.settings.guidedEnding && guideChoiceIndexForState(node.id, library.settings.guidedEnding, stats, decisions) === index;
                   return <button key={choice.label} className={[lockReason ? "choice-locked" : "", isNew ? "choice-new" : "", isGuided ? "choice-guided" : ""].filter(Boolean).join(" ") || undefined} disabled={Boolean(lockReason)} onClick={() => selectChoice(choice)}>
                     <span className="choice-index">0{index + 1}</span>
                     <span className="choice-copy"><b>{choice.label}</b><small>{lockReason ?? choice.consequence}</small></span>
@@ -378,6 +378,8 @@ export default function Home() {
         soundOn={soundOn} onSound={toggleSound} showHud={showHud} onHud={() => setShowHud(value => !value)}
         settingsUnlocked={library.unlocked.length > 0} discoveryMode={library.settings.discoveryMode}
         onDiscoveryMode={() => commitLibrary({ ...libraryRef.current, settings: { ...libraryRef.current.settings, discoveryMode: !libraryRef.current.settings.discoveryMode } })}
+        guideEnabled={library.settings.guideEnabled}
+        onGuideEnabled={() => commitLibrary({ ...libraryRef.current, settings: { ...libraryRef.current.settings, guideEnabled: !libraryRef.current.settings.guideEnabled, guidedEnding: libraryRef.current.settings.guidedEnding ?? Object.keys(endingNodes)[0] } })}
         guidedEnding={library.settings.guidedEnding}
         onGuidedEnding={guidedEnding => commitLibrary({ ...libraryRef.current, settings: { ...libraryRef.current.settings, guidedEnding } })}
         locked={updates.installing} updateContent={<UpdatePanel updates={updates} />}

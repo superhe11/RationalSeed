@@ -54,7 +54,7 @@ export function RouteMap({ library, current, hasRun }: { library: Library; curre
     <div className="map-controls">
       <button aria-pressed={mode === "current"} onClick={() => setMode("current")}>Сейчас</button>
       <button aria-pressed={mode === "all"} onClick={() => setMode("all")}>За все игры</button>
-      <button className="tree-settings-button" aria-expanded={settings} aria-controls="tree-settings" onClick={() => setSettings(!settings)}>Настройки</button>
+      <button className="tree-settings-button" aria-expanded={settings} aria-controls="tree-settings" onClick={() => setSettings(!settings)}>Вид карты</button>
     </div>
     <p className="panel-intro" role="status">Ответы {decisions.size}/{graph.nodes.filter(node => node.kind === "choice").length} · сцены {visited.size}/{Object.keys(story).length} · финалы {unlocked.size}/{Object.keys(endingNodes).length}</p>
     {settings && <div id="tree-settings" className="tree-settings"><div className="map-options">

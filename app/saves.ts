@@ -5,11 +5,11 @@ export const LEGACY_KEY = "rational-seed-save-v3";
 export const SLOT_COUNT = 6;
 export type SaveState = { nodeId: string; stats: StoryStats; history: string[]; decisions?: string[]; endingId?: string };
 export type SavedGame = SaveState & { savedAt: string };
-export type LibrarySettings = { discoveryMode: boolean; guidedEnding?: string; completionNoticeSeen: boolean };
+export type LibrarySettings = { discoveryMode: boolean; guideEnabled: boolean; guidedEnding?: string; completionNoticeSeen: boolean };
 export type Library = { schema: 1; auto: SavedGame | null; slots: (SavedGame | null)[]; unlocked: string[]; visited: string[]; decisions: string[]; settings: LibrarySettings };
 type StorageReader = Pick<Storage, "getItem">;
 export const freshGame = (): SaveState => ({ nodeId: "prologue", stats: { ...initialStats }, history: [], decisions: [] });
-export const emptyLibrary = (): Library => ({ schema: 1, auto: null, slots: Array(SLOT_COUNT).fill(null), unlocked: [], visited: [], decisions: [], settings: { discoveryMode: false, completionNoticeSeen: false } });
+export const emptyLibrary = (): Library => ({ schema: 1, auto: null, slots: Array(SLOT_COUNT).fill(null), unlocked: [], visited: [], decisions: [], settings: { discoveryMode: false, guideEnabled: false, completionNoticeSeen: false } });
 const owns = (object: object, key: unknown): key is string => typeof key === "string" && Object.hasOwn(object, key);
 
 export function validDecision(value: unknown): value is string {
@@ -68,6 +68,7 @@ export function readLibrary(storage: StorageReader): { library: Library; warning
       const savedSettings = data.settings && typeof data.settings === "object" ? data.settings as Partial<LibrarySettings> : {};
       library.settings = {
         discoveryMode: savedSettings.discoveryMode === true,
+        guideEnabled: savedSettings.guideEnabled === true,
         guidedEnding: typeof savedSettings.guidedEnding === "string" && owns(endingNodes, savedSettings.guidedEnding) ? savedSettings.guidedEnding : undefined,
         completionNoticeSeen: savedSettings.completionNoticeSeen === true,
       };

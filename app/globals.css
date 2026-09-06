@@ -367,7 +367,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue); outline-
 .game-panel::backdrop { background: #020509cf; backdrop-filter: blur(5px); }
 .panel-heading { display: flex; align-items: center; gap: 12px; padding: 16px 22px 8px; }
 .panel-heading h2 { font: 500 1.75rem/1.2 Georgia, serif; margin: 0; }
-.close-panel { margin-left: auto; min-width: 44px; min-height: 44px; border: 1px solid var(--line); background: none; font-size: 1.75rem; }
+.sections-toggle { margin-left: auto; min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); background: transparent; color: var(--ink); font-size: .875rem; }
+.close-panel { min-width: 44px; min-height: 44px; border: 1px solid var(--line); background: none; font-size: 1.75rem; }
 .panel-nav { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 22px 16px; border-bottom: 1px solid var(--line); }
 .panel-nav button, .menu-actions > button { padding: 10px 14px; min-height: 44px; border: 1px solid var(--line); background: none; text-align: left; font-size: .875rem; }
 .panel-nav button[aria-current] { border-color: var(--blue); background: #70a8c41a; color: #bbdef0; }
@@ -493,7 +494,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--blue); outline-
 
 /* Map is a bounded working surface, not a long page above a second scroll area. */
 .game-panel.tree-panel[open] { display: flex; flex-direction: column; height: calc(100dvh - 16px - var(--safe-top) - var(--safe-bottom)); max-height: calc(100dvh - 16px - var(--safe-top) - var(--safe-bottom)); overflow: hidden; }
-.tree-panel .panel-heading { flex: 0 0 auto; padding: 4px 10px; }
+.tree-panel .panel-heading { flex: 0 0 auto; padding: 6px 10px; }
 .tree-panel .panel-heading h2 { font-size: 1.35rem; }
 .tree-panel .panel-nav { flex: 0 0 auto; }
 .tree-panel .panel-body { display: flex; flex: 1 1 0; min-height: 0; padding: 8px; overflow: hidden; }

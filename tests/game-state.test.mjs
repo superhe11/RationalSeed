@@ -150,6 +150,7 @@ test("old libraries get safe defaults for post-completion route helpers", () => 
   const old = { schema: 1, auto: null, slots: [], unlocked: ["subject"], visited: [], decisions: [] };
   const library = readLibrary(storage({ [LIBRARY_KEY]: JSON.stringify(old) })).library;
   assert.equal(library.settings.discoveryMode, false);
+  assert.equal(library.settings.guideEnabled, false);
   assert.equal(library.settings.guidedEnding, undefined);
   assert.equal(library.settings.completionNoticeSeen, false);
 });

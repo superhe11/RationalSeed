@@ -14,7 +14,7 @@ type Props = {
   onSave: (index: number) => void; onDelete: (index: number) => void;
   onReset: () => void; onTitle: () => void; soundOn: boolean; onSound: () => void;
   showHud: boolean; onHud: () => void; settingsUnlocked: boolean; discoveryMode: boolean; onDiscoveryMode: () => void;
-  guidedEnding?: string; onGuidedEnding: (endingId: string | undefined) => void; locked: boolean; updateContent: ReactNode;
+  guideEnabled: boolean; onGuideEnabled: () => void; guidedEnding?: string; onGuidedEnding: (endingId: string | undefined) => void; locked: boolean; updateContent: ReactNode;
 };
 
 export function GamePanel(props: Props) {
@@ -22,6 +22,7 @@ export function GamePanel(props: Props) {
   const [confirmation, setConfirmation] = useState<{ text: string; run: () => void } | null>(null);
   const [reading, setReading] = useState<string | null>(null);
   const [status, setStatus] = useState("");
+  const [sectionsOpen, setSectionsOpen] = useState(props.panel === "menu");
   useEffect(() => {
     const el = dialog.current;
     el?.showModal();
@@ -29,18 +30,19 @@ export function GamePanel(props: Props) {
     document.body.style.overflow = "hidden";
     return () => { el?.close(); document.body.style.overflow = originalOverflow; };
   }, []);
-  const changePanel = (panel: Panel) => { setReading(null); setConfirmation(null); setStatus(""); props.onPanel(panel); };
+  useEffect(() => { setSectionsOpen(props.panel === "menu"); }, [props.panel]);
+  const changePanel = (panel: Panel) => { setReading(null); setConfirmation(null); setStatus(""); setSectionsOpen(false); props.onPanel(panel); };
   const load = (save: SavedGame) => setConfirmation({ text: "Загрузить этот момент? Текущее автосохранение будет заменено. Ручные слоты останутся.", run: () => props.onLoad(save) });
   const viewing = reading && props.library.unlocked.includes(reading) ? endingNodes[reading] : null;
-  const guideReachable = props.guidedEnding && !props.currentSave.endingId
+  const guideReachable = props.guideEnabled && props.guidedEnding && !props.currentSave.endingId
     ? guideTargetReachable(props.currentSave.nodeId, props.guidedEnding, props.currentSave.stats, props.currentSave.decisions ?? [])
     : false;
 
   return <dialog className={`game-panel ${props.panel === "map" ? "tree-panel" : ""}`} ref={dialog} aria-labelledby="panel-heading" onCancel={event => { event.preventDefault(); props.onClose(); }}>
-    <div className="panel-heading"><h2 id="panel-heading">{panelLabels[props.panel]}</h2><button className="close-panel" disabled={props.locked} onClick={props.onClose} aria-label="Закрыть меню">×</button></div>
-    <nav className="panel-nav" aria-label="Разделы меню">
+    <div className="panel-heading"><h2 id="panel-heading">{panelLabels[props.panel]}</h2><button className="sections-toggle" aria-expanded={sectionsOpen} aria-controls="panel-sections" onClick={() => setSectionsOpen(value => !value)}>Разделы</button><button className="close-panel" disabled={props.locked} onClick={props.onClose} aria-label="Закрыть меню">×</button></div>
+    {sectionsOpen && <nav id="panel-sections" className="panel-nav" aria-label="Разделы меню">
       {(Object.keys(panelLabels) as Panel[]).map(panel => <button key={panel} aria-current={props.panel === panel ? "page" : undefined} disabled={props.locked} onClick={() => changePanel(panel)}>{panelLabels[panel]}</button>)}
-    </nav>
+    </nav>}
     <div className="panel-body">
       {confirmation ? <section className="confirmation" aria-label="Подтверждение">
         <p>{confirmation.text}</p><div className="panel-actions"><button className="primary-button" onClick={() => { confirmation.run(); setConfirmation(null); }}>Подтвердить</button><button className="text-button" onClick={() => setConfirmation(null)}>Отмена</button></div>
@@ -97,8 +99,9 @@ export function GamePanel(props: Props) {
           {!props.settingsUnlocked ? <p className="panel-intro">Лёгкий режим и проводник по финалам откроются после первого прохождения.</p> : <>
             <p className="panel-intro">Помощники не меняют сюжет и не открывают закрытые сцены. Они только подсвечивают ходы.</p>
             <label className="setting-toggle"><input type="checkbox" checked={props.discoveryMode} onChange={props.onDiscoveryMode} /><span><b>Лёгкий режим</b><small>Подсвечивать ответы, которых ещё не было ни в одном прохождении.</small></span></label>
-            <label className="setting-select"><span><b>Проводник по финалу</b><small>Показывает один конкретный маршрут к выбранному финалу.</small></span><select value={props.guidedEnding ?? ""} onChange={event => props.onGuidedEnding(event.target.value || undefined)}><option value="">Не выбран</option>{Object.entries(endingNodes).map(([id, ending]) => <option key={id} value={id}>{ending.chapterTitle.replace("Финал · ", "")}</option>)}</select></label>
-            {props.guidedEnding && <p className="panel-footnote">{guideReachable ? "Золотая рамка — следующий достижимый ход к выбранному финалу." : "Этот финал уже недоступен в текущем прохождении: проводник не будет подсвечивать путь в закрытую развилку."}</p>}
+            <label className="setting-toggle"><input type="checkbox" checked={props.guideEnabled} onChange={props.onGuideEnabled} /><span><b>Проводник по финалу</b><small>Ведёт от первого выбора нового прохождения к выбранной концовке.</small></span></label>
+            <label className="setting-select"><span><b>Целевая концовка</b><small>Можно сменить цель, не выключая проводник.</small></span><select disabled={!props.guideEnabled} value={props.guidedEnding ?? Object.keys(endingNodes)[0]} onChange={event => props.onGuidedEnding(event.target.value)}>{Object.entries(endingNodes).map(([id, ending]) => <option key={id} value={id}>{ending.chapterTitle.replace("Финал · ", "")}</option>)}</select></label>
+            {props.guideEnabled && <p className="panel-footnote">{guideReachable ? "Золотая рамка — следующий ход на маршруте к выбранному финалу." : "Этот сейв уже не ведёт к выбранному финалу. Начни новую игру — проводник проведёт от первого выбора."}</p>}
           </>}
         </section>}
         {props.panel === "map" && <RouteMap library={props.library} current={props.currentSave} hasRun={props.canSave} />}
