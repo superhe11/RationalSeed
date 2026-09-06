@@ -121,6 +121,58 @@ export function guideChoiceIndex(nodeId: string, endingId: string): number | und
   return guidedChoices.get(nodeId)?.get(endingId);
 }
 
+type GuideState = { nodeId: string; stats: StoryStats; decisions: string[] };
+const guideClamp = (value: number) => Math.max(0, Math.min(10, value));
+const guideStatsAfter = (stats: StoryStats, choice: Choice): StoryStats => ({
+  boundaries: guideClamp(stats.boundaries + (choice.delta.boundaries ?? 0)),
+  selfControl: guideClamp(stats.selfControl + (choice.delta.selfControl ?? 0)),
+  pressure: guideClamp(stats.pressure + (choice.delta.pressure ?? 0)),
+});
+
+function guideCanReach(state: GuideState, endingId: string) {
+  const queue = [state];
+  const seen = new Set<string>();
+  let steps = 0;
+  while (queue.length && steps < 25_000) {
+    steps += 1;
+    const current = queue.shift()!;
+    const key = `${current.nodeId}:${current.stats.boundaries},${current.stats.selfControl},${current.stats.pressure}:${[...current.decisions].sort().join("|")}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const node = story[current.nodeId];
+    if (!node) continue;
+    const edges = node.choices?.map((choice, index) => ({ choice, index })) ?? [{ choice: { next: node.next ?? "", delta: {} } as Choice, index: -1 }];
+    for (const { choice, index } of edges) {
+      if (index >= 0 && choiceLockReason(current.stats, choice, current.decisions)) continue;
+      const stats = index >= 0 ? guideStatsAfter(current.stats, choice) : current.stats;
+      const decisions = index >= 0 ? [...current.decisions, `${node.id}:${index}`] : current.decisions;
+      if (choice.next === "resolve") {
+        if (chooseEnding(stats) === endingId) return true;
+      } else if (choice.next === `ending:${endingId}`) return true;
+      else if (choice.next && !choice.next.startsWith("ending:")) queue.push({ nodeId: choice.next, stats, decisions });
+    }
+  }
+  return false;
+}
+
+export function guideTargetReachable(nodeId: string, endingId: string, stats: StoryStats, decisions: string[]) {
+  return guideCanReach({ nodeId, stats, decisions }, endingId);
+}
+
+export function guideChoiceIndexForState(nodeId: string, endingId: string, stats: StoryStats, decisions: string[]) {
+  const node = story[nodeId];
+  if (!node?.choices) return undefined;
+  for (let index = 0; index < node.choices.length; index += 1) {
+    const choice = node.choices[index];
+    if (choiceLockReason(stats, choice, decisions)) continue;
+    const nextStats = guideStatsAfter(stats, choice);
+    if (choice.next === "resolve" && chooseEnding(nextStats) === endingId) return index;
+    if (choice.next === `ending:${endingId}`) return index;
+    if (!choice.next.startsWith("ending:") && guideCanReach({ nodeId: choice.next, stats: nextStats, decisions: [...decisions, `${node.id}:${index}`] }, endingId)) return index;
+  }
+  return undefined;
+}
+
 export const story: Record<string, StoryNode> = {
   prologue: n(
     "prologue", 0, "Пролог · Биоэмоциональный коктейль", "ОКТЯБРЬ · 21:43", "corridor",
@@ -1051,13 +1103,33 @@ export const story: Record<string, StoryNode> = {
   ),
   therapy_go: n(
     "therapy_go", 10, "X · Человек без техподдержки", "10:47", "dawn", "Психотерапевт",
-    "«Мы не будем искать способ гарантированно получить взаимность. Будем разбирать, почему её отсутствие для вас невыносимо». У Саши впервые нет уточнения для женщины в личке.",
-    "ending:exit",
+    "«Мы не будем искать способ гарантированно получить взаимность. Будем разбирать, почему её отсутствие для вас невыносимо». Саша записывает формулировку в заметки: она пригодится, чтобы объяснить друзьям, что теперь он работает над собой профессионально.",
+    "therapy_go_result",
+  ),
+  therapy_go_result: q(
+    "therapy_go_result", 11, "XI · Неловкая работа", "ПОСЛЕ ПЕРВОЙ ВСТРЕЧИ", "dawn", "Рассказчик",
+    "Одна встреча не делает из Саши другого человека. Зато даёт ему четыре способа распорядиться новой формулировкой — и ни один не отменяет уже сделанного.",
+    [
+      c("Прийти на следующую встречу без отчёта о собственном прогрессе", "Скучный шаг не выглядит как победа. Поэтому его особенно трудно выдать за победу заранее.", "ending:exit", { boundaries: 1, selfControl: 2, pressure: -1 }, { boundaries: 7, selfControl: 6, pressureMax: 4 }, "Этот путь не открывается одной консультацией: нужны накопленные границы и низкое давление."),
+      c("Сделать из терапии новую систему самооценки", "Папка получает название «рост». Содержимое пока узнаваемо.", "last_sheet", { pressure: 2, selfControl: -1 }),
+      c("Написать Анастасии, что специалист подтвердил его сложность", "Чужие слова мгновенно превращаются в сертификат исключительности.", "last_sheet", { pressure: 2, boundaries: -1 }),
+      c("Спросить, как быстро это поможет найти отношения", "Даже помощь пытаются измерить скоростью выдачи приза.", "last_sheet", { pressure: 3, boundaries: -2 }),
+    ],
   ),
   therapy_research: n(
     "therapy_research", 10, "X · Человек без техподдержки", "ТРИ НЕДЕЛИ СПУСТЯ", "laboratory", "Анастасия",
-    "Он присылает таблицу из двенадцати специалистов. «К кому вы записались?» Ни к кому. «Тогда благодарить меня за помощь пока рано». Дима заглядывает в таблицу: «У тебя на выбор психолога больше сил ушло, чем на то, чтобы перестать спамить». Таблица получает тринадцатую строку.",
-    "ending:mirror",
+    "Он присылает таблицу из двенадцати специалистов. «К кому вы записались?» Ни к кому. Женя заглядывает в таблицу, находит тринадцатую строку и молча добавляет внизу: «действие». Саша считает это недостаточно точным критерием.",
+    "therapy_research_result",
+  ),
+  therapy_research_result: q(
+    "therapy_research_result", 11, "XI · Отложенная жизнь", "ТРИ НЕДЕЛИ СПУСТЯ", "laboratory", "Рассказчик",
+    "Таблица стала аккуратнее, запись так и не появилась. Теперь можно сделать одно действие, усложнить методологию, найти виноватого в спешке или назвать подготовку самостоятельным результатом.",
+    [
+      c("Поставить дату первой записи и закрыть таблицу", "Действие не оправдывает прошлую паузу. Оно просто наконец происходит.", "ending:mirror", { boundaries: 1, selfControl: 2, pressure: -1 }, { boundaries: 5, selfControl: 5, pressureMax: 5 }, "Эта развязка требует не только таблицы, но и уже накопленного самоконтроля."),
+      c("Добавить ещё семь критериев выбора", "Методология становится настолько точной, что в неё больше не помещается решение.", "last_sheet", { selfControl: -1, pressure: 1 }),
+      c("Объяснить Жене, что он давит", "Фраза «поставь дату» получает статус агрессии против сложной личности.", "last_sheet", { pressure: 2, boundaries: -1 }),
+      c("Опубликовать таблицу как доказательство работы над собой", "Подготовка получает аудиторию раньше, чем результат.", "last_sheet", { pressure: 2, selfControl: -1 }),
+    ],
   ),
   therapy_photos: n(
     "therapy_photos", 10, "X · Человек без техподдержки", "12:20", "corridor", "Рассказчик",

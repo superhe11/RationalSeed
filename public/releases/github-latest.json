@@ -1,13 +1,13 @@
 {
-    "contentCode":  17,
-    "versionName":  "2.1.0",
+    "contentCode":  18,
+    "versionName":  "2.1.1",
     "runtimeVersion":  "android-2",
-    "publishedAt":  "2026-09-06T17:17:46.8819449Z",
+    "publishedAt":  "2026-09-06T17:54:26.7251937Z",
     "notes":  [
-                  "Переработка сюжетных маршрутов и реальных последствий выборов.",
-                  "Обновление главы НИИ и упрощение карты выборов."
+                  "Исправление проводника по финалам и условий доступности.",
+                  "Устранение ложных быстрых концовок после одной сцены."
               ],
-    "bundleUrl":  "https://github.com/superhe11/RationalSeed/releases/download/v2.1.0/novel-2.1.0-17.zip",
-    "sha256":  "66ecab0294f4a3b9a1eea712cc16fe987a097caf899bdd8541db7a9a8afc0a65",
-    "sizeBytes":  304955
+    "bundleUrl":  "https://github.com/superhe11/RationalSeed/releases/download/v2.1.1/novel-2.1.1-18.zip",
+    "sha256":  "ddeb16340774ae5a66fe08567f0443bbab34f0b543d9035747bc0f937060ece4",
+    "sizeBytes":  306430
 }

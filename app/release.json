@@ -1,13 +1,13 @@
 {
-  "versionCode": 16,
-  "contentCode": 17,
+  "versionCode": 17,
+  "contentCode": 18,
   "runtimeVersion": "android-2",
-  "versionName": "2.1.0",
+  "versionName": "2.1.1",
   "githubRepository": "superhe11/RationalSeed",
   "updateManifestUrl": "https://raw.githubusercontent.com/superhe11/RationalSeed/updates/latest.json",
   "updateOrigin": "https://rational-seed-novel.workspace-vo-3629.chatgpt.site",
   "notes": [
-    "Переработка сюжетных маршрутов и реальных последствий выборов.",
-    "Обновление главы НИИ и упрощение карты выборов."
+    "Исправление проводника по финалам и условий доступности.",
+    "Устранение ложных быстрых концовок после одной сцены."
   ]
 }

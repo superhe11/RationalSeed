@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { emptyLibrary, freshGame, LIBRARY_KEY, LEGACY_KEY, readLibrary, routeProgress, snapshot, validateSave, withAutosave, writeLibrary } from "../app/saves.ts";
-import { branchCount, choiceCount, choiceLockReason, chooseEnding, endingNodes, guideChoiceIndex, story } from "../app/story.ts";
+import { branchCount, choiceCount, choiceLockReason, chooseEnding, endingNodes, guideChoiceIndexForState, guideTargetReachable, story } from "../app/story.ts";
 import { release, validateRelease } from "../app/updates.ts";
 import { achievements, unlockedAchievements } from "../app/achievements.ts";
 
@@ -106,13 +106,16 @@ test("all nodes and endings remain reachable; every choice has a valid target", 
   assert.notEqual(story.club_play.next, "club_no");
 });
 
-test("final guide highlights authored route decisions rather than a synthetic verdict tree", () => {
-  for (const [endingId, index] of [["exit", 0], ["mirror", 1], ["protocol", 2], ["stage_empty", 3]]) {
-    assert.equal(guideChoiceIndex("therapist", endingId), index);
-  }
-  for (const [endingId, index] of [["subject", 0], ["pause", 1], ["stage_empty", 2], ["stage_music", 3]]) {
-    assert.equal(guideChoiceIndex("last_sheet", endingId), index);
-  }
+test("final guide only marks a route that remains reachable in this run", () => {
+  const bad = { boundaries: 2, selfControl: 1, pressure: 10 };
+  assert.equal(guideTargetReachable("therapist", "exit", bad, []), false);
+  assert.equal(guideTargetReachable("therapist", "mirror", bad, []), false);
+  assert.equal(guideChoiceIndexForState("last_sheet", "stage_empty", bad, []), undefined);
+  const steady = { boundaries: 8, selfControl: 7, pressure: 3 };
+  assert.equal(guideChoiceIndexForState("therapist", "exit", steady, []), 0);
+  assert.equal(guideChoiceIndexForState("therapy_go_result", "exit", steady, []), 0);
+  const caseHistory = ["matrix:1", "first_signal:0", "october_round:0", "direct_no:2", "yana_proxy:3"];
+  assert.equal(guideChoiceIndexForState("last_sheet", "stage_empty", bad, caseHistory), 2);
 });
 
 test("late restorative choice stays closed until the stats support it", () => {

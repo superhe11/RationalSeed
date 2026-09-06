@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { endingNodes, story } from "./story";
+import { endingNodes, guideTargetReachable, story } from "./story";
 import { endingHints, type Library, type SavedGame, type SaveState } from "./saves";
 import { RouteMap } from "./route-map";
 import { achievements, unlockedAchievements } from "./achievements";
@@ -32,6 +32,9 @@ export function GamePanel(props: Props) {
   const changePanel = (panel: Panel) => { setReading(null); setConfirmation(null); setStatus(""); props.onPanel(panel); };
   const load = (save: SavedGame) => setConfirmation({ text: "Загрузить этот момент? Текущее автосохранение будет заменено. Ручные слоты останутся.", run: () => props.onLoad(save) });
   const viewing = reading && props.library.unlocked.includes(reading) ? endingNodes[reading] : null;
+  const guideReachable = props.guidedEnding && !props.currentSave.endingId
+    ? guideTargetReachable(props.currentSave.nodeId, props.guidedEnding, props.currentSave.stats, props.currentSave.decisions ?? [])
+    : false;
 
   return <dialog className={`game-panel ${props.panel === "map" ? "tree-panel" : ""}`} ref={dialog} aria-labelledby="panel-heading" onCancel={event => { event.preventDefault(); props.onClose(); }}>
     <div className="panel-heading"><h2 id="panel-heading">{panelLabels[props.panel]}</h2><button className="close-panel" disabled={props.locked} onClick={props.onClose} aria-label="Закрыть меню">×</button></div>
@@ -95,7 +98,7 @@ export function GamePanel(props: Props) {
             <p className="panel-intro">Помощники не меняют сюжет и не открывают закрытые сцены. Они только подсвечивают ходы.</p>
             <label className="setting-toggle"><input type="checkbox" checked={props.discoveryMode} onChange={props.onDiscoveryMode} /><span><b>Лёгкий режим</b><small>Подсвечивать ответы, которых ещё не было ни в одном прохождении.</small></span></label>
             <label className="setting-select"><span><b>Проводник по финалу</b><small>Показывает один конкретный маршрут к выбранному финалу.</small></span><select value={props.guidedEnding ?? ""} onChange={event => props.onGuidedEnding(event.target.value || undefined)}><option value="">Не выбран</option>{Object.entries(endingNodes).map(([id, ending]) => <option key={id} value={id}>{ending.chapterTitle.replace("Финал · ", "")}</option>)}</select></label>
-            {props.guidedEnding && <p className="panel-footnote">Золотая рамка — ход проводника. Если он закрыт показателями, сначала выбери другой путь и измени состояние Саши.</p>}
+            {props.guidedEnding && <p className="panel-footnote">{guideReachable ? "Золотая рамка — следующий достижимый ход к выбранному финалу." : "Этот финал уже недоступен в текущем прохождении: проводник не будет подсвечивать путь в закрытую развилку."}</p>}
           </>}
         </section>}
         {props.panel === "map" && <RouteMap library={props.library} current={props.currentSave} hasRun={props.canSave} />}

@@ -17,7 +17,7 @@ import {
   choiceCount,
   chooseEnding,
   endingNodes,
-  guideChoiceIndex,
+  guideChoiceIndexForState,
   initialStats,
   mainChapterCount,
   story,
@@ -331,7 +331,7 @@ export default function Home() {
                   const lockReason = choiceLockReason(stats, choice, decisions);
                   const decisionId = `${node.id}:${index}`;
                   const isNew = library.unlocked.length > 0 && library.settings.discoveryMode && !library.decisions.includes(decisionId);
-                  const isGuided = library.unlocked.length > 0 && library.settings.guidedEnding && guideChoiceIndex(node.id, library.settings.guidedEnding) === index;
+                  const isGuided = library.unlocked.length > 0 && library.settings.guidedEnding && guideChoiceIndexForState(node.id, library.settings.guidedEnding, stats, decisions) === index;
                   return <button key={choice.label} className={[lockReason ? "choice-locked" : "", isNew ? "choice-new" : "", isGuided ? "choice-guided" : ""].filter(Boolean).join(" ") || undefined} disabled={Boolean(lockReason)} onClick={() => selectChoice(choice)}>
                     <span className="choice-index">0{index + 1}</span>
                     <span className="choice-copy"><b>{choice.label}</b><small>{lockReason ?? choice.consequence}</small></span>
