@@ -3,6 +3,7 @@ import test from "node:test";
 import { emptyLibrary, freshGame, LIBRARY_KEY, LEGACY_KEY, readLibrary, routeProgress, snapshot, validateSave, withAutosave, writeLibrary } from "../app/saves.ts";
 import { branchCount, choiceCount, choiceLockReason, chooseEnding, endingNodes, story } from "../app/story.ts";
 import { release, validateRelease } from "../app/updates.ts";
+import { achievements, unlockedAchievements } from "../app/achievements.ts";
 
 const storage = data => ({ getItem: key => data[key] ?? null });
 
@@ -111,6 +112,18 @@ test("conditional bad endings require the matching route, not only high pressure
   assert.ok(choiceLockReason(bad, sexRoute, ["mentor_choice:3", "freshman_boundary:1"]));
   assert.equal(choiceLockReason(bad, caseRoute, ["matrix:1", "first_signal:0", "october_round:0", "direct_no:2", "yana_proxy:3"]), undefined);
   assert.equal(choiceLockReason(bad, sexRoute, ["mentor_choice:3", "freshman_boundary:1", "varya_intimacy:1"]), undefined);
+});
+
+test("achievements use the shared library progress and keep locked goals visible", () => {
+  const library = emptyLibrary();
+  assert.equal(unlockedAchievements(library).length, 0);
+  library.decisions = ["matrix:0"];
+  library.visited = ["wide_home_start", "wide_ivan_start", "wide_dima_start", "wide_archive_start", "wide_home_choice_3"];
+  library.unlocked = ["subject", "pause", "protocol"];
+  assert.ok(unlockedAchievements(library).some(item => item.id === "first_choice"));
+  assert.ok(unlockedAchievements(library).some(item => item.id === "four_roads"));
+  assert.ok(unlockedAchievements(library).some(item => item.id === "long_way"));
+  assert.equal(achievements.length, 7);
 });
 
 const validRelease = () => ({ contentCode: 3, versionName: "1.2.0", runtimeVersion: "android-2", notes: ["Исправление"], bundleUrl: `${release.updateOrigin}/releases/novel-1.2.0-3.zip`, sha256: "a".repeat(64), publishedAt: "2026-09-05T20:00:00Z", sizeBytes: 2000 });

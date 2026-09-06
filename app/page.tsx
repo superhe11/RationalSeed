@@ -9,6 +9,7 @@ import { markAppReady, release } from "./updates";
 import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
 import { IntroNotice } from "./intro-notice";
+import { achievements, unlockedAchievements } from "./achievements";
 import {
   branchCount,
   chapterCount,
@@ -270,6 +271,7 @@ export default function Home() {
             <button className="text-button" disabled={!ready} onClick={() => setPanel("menu")}>Меню</button>
             <button className="text-button" disabled={!ready} onClick={() => setPanel("saves")}>Сохранения</button>
             <button className="text-button" disabled={!ready} onClick={() => setPanel("endings")}>Концовки · {library.unlocked.length}/{Object.keys(endingNodes).length}</button>
+            <button className="text-button" disabled={!ready} onClick={() => setPanel("achievements")}>Достижения · {unlockedAchievements(library).length}/{achievements.length}</button>
             <button className="text-button" disabled={!ready} onClick={() => setPanel("map")}>Карта выборов</button>
             <button className="text-button" onClick={() => setPanel("updates")}>Версия {release.versionName}{updates.available ? " · новая версия" : ""}</button>
             {library.auto && <button className="text-button" onClick={() => setPanel("menu")}>Новая игра</button>}

@@ -1,13 +1,13 @@
 {
-    "contentCode":  11,
-    "versionName":  "1.8.0",
+    "contentCode":  12,
+    "versionName":  "1.9.0",
     "runtimeVersion":  "android-2",
-    "publishedAt":  "2026-09-06T12:40:30.1523723Z",
+    "publishedAt":  "2026-09-06T13:09:01.3082057Z",
     "notes":  [
-                  "Расширение сюжетных маршрутов и глав.",
-                  "Переработка восьмой главы и финалов."
+                  "Добавление достижений и новых сюжетных маршрутов.",
+                  "Расширение ветвления и количества сцен."
               ],
-    "bundleUrl":  "https://github.com/superhe11/RationalSeed/releases/download/v1.8.0/novel-1.8.0-11.zip",
-    "sha256":  "1bc1594d6fb9547dcb7e74e73ac9362eec977fae2b9a8cab1fda7f7a04dbf6e9",
-    "sizeBytes":  2142431
+    "bundleUrl":  "https://github.com/superhe11/RationalSeed/releases/download/v1.9.0/novel-1.9.0-12.zip",
+    "sha256":  "86c9b8e9be9bad2fe8172b7bb35c2a30554c1bd2848390e9393b15e83f669739",
+    "sizeBytes":  2144678
 }

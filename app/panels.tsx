@@ -4,9 +4,10 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { endingNodes, story } from "./story";
 import { endingHints, type Library, type SavedGame, type SaveState } from "./saves";
 import { RouteMap } from "./route-map";
+import { achievements, unlockedAchievements } from "./achievements";
 
-export type Panel = "menu" | "saves" | "map" | "endings" | "updates";
-const panelLabels: Record<Panel, string> = { menu: "Меню", saves: "Сохранения", map: "Карта", endings: "Концовки", updates: "Обновления" };
+export type Panel = "menu" | "saves" | "map" | "endings" | "achievements" | "updates";
+const panelLabels: Record<Panel, string> = { menu: "Меню", saves: "Сохранения", map: "Карта", endings: "Концовки", achievements: "Достижения", updates: "Обновления" };
 type Props = {
   panel: Panel; onPanel: (panel: Panel) => void; onClose: () => void;
   library: Library; currentSave: SaveState; canSave: boolean; onLoad: (save: SaveState) => void;
@@ -77,6 +78,17 @@ export function GamePanel(props: Props) {
             </article>;
           })}</div>
         </>)}
+        {props.panel === "achievements" && <>
+          <p className="panel-intro">Открыто {unlockedAchievements(props.library).length} из {achievements.length}. Достижения считаются по общему прогрессу всех прохождений.</p>
+          <div className="ending-grid">{achievements.map((achievement, i) => {
+            const unlocked = achievement.isUnlocked(props.library);
+            return <article key={achievement.id} className={`ending-card ${unlocked ? "unlocked" : "locked"}`}>
+              <span className="ending-number">{String(i + 1).padStart(2, "0")} / {unlocked ? "Открыто" : "Закрыто"}</span>
+              <h3>{achievement.title}</h3><p>{achievement.description}</p>
+              <span className={unlocked ? "locked-note achievement-open" : "locked-note"}>{unlocked ? "Засчитано" : "Условие скрыто до выполнения"}</span>
+            </article>;
+          })}</div>
+        </>}
         {props.panel === "map" && <RouteMap library={props.library} current={props.currentSave} hasRun={props.canSave} />}
         {props.panel === "updates" && props.updateContent}
       </>}
