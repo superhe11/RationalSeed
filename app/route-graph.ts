@@ -2,7 +2,11 @@ import { story, endingNodes } from "./story.ts";
 
 export type GraphNode = { id: string; kind: "scene" | "choice" | "ending"; source: string; index?: number; chapter: number; label: string; x: number; y: number };
 export type GraphEdge = { from: string; to: string; decision?: string };
-export function buildRouteGraph() {
+export function buildRouteGraph(compact = false) {
+  const nodeWidth = compact ? 176 : 224;
+  const nodeHeight = compact ? 96 : 112;
+  const columnStep = compact ? 216 : 296;
+  const rowStep = compact ? 116 : 144;
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
   const targets = (next: string) => next === "resolve" ? Object.keys(endingNodes).map(id => `ending:${id}`) : [next];
@@ -37,7 +41,7 @@ export function buildRouteGraph() {
       return parents.length ? parents.reduce((sum, edge) => sum + byId.get(edge.from)!.y, 0) / parents.length : 0;
     };
     column.sort((a, b) => average(a) - average(b));
-    column.forEach((node, row) => { node.x = 24 + x * 296; node.y = 64 + (row + (rows - column.length) / 2) * 144; });
+    column.forEach((node, row) => { node.x = 16 + x * columnStep; node.y = 48 + (row + (rows - column.length) / 2) * rowStep; });
   });
-  return { nodes, edges, width: columns.length * 296 + 24, height: rows * 144 + 88 };
+  return { nodes, edges, nodeWidth, nodeHeight, width: columns.length * columnStep + 16, height: rows * rowStep + 64 };
 }

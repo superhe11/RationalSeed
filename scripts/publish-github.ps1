@@ -10,6 +10,7 @@ $archiveName = "novel-$($release.versionName)-$($release.contentCode).zip"
 $archivePath = Join-Path (Get-Location) "public/releases/$archiveName"
 if ((Get-FileHash -LiteralPath $archivePath).Hash.ToLowerInvariant() -ne $manifest.sha256 -or (Get-Item -LiteralPath $archivePath).Length -ne $manifest.sizeBytes) { throw 'Archive checksum or size mismatch.' }
 if ($manifest.bundleUrl -ne "https://github.com/$repository/releases/download/v$($release.versionName)/$archiveName") { throw 'Unexpected download URL.' }
+if ($ApkPath) { & (Join-Path $PSScriptRoot 'verify-apk.ps1') -ApkPath $ApkPath }
 if (@(git status --porcelain).Count -gt 0) { throw 'Commit the tested source and release files before publication.' }
 $sourceSha = (git rev-parse --verify HEAD).Trim()
 if ($LASTEXITCODE -ne 0) { throw 'Cannot identify source commit.' }

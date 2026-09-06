@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { checkRelease, installRelease, isAndroidApp, release, type AppRelease } from "./updates";
 import { App } from "@capacitor/app";
 import { flushSaves } from "./device-storage";
+import releaseHistory from "./release-history.json";
 
 export function useUpdates(ready: boolean, showPopup: () => void) {
   const [latest, setLatest] = useState<AppRelease | null>(null);
@@ -56,10 +57,17 @@ export function useUpdates(ready: boolean, showPopup: () => void) {
 }
 
 export function UpdatePanel({ updates }: { updates: ReturnType<typeof useUpdates> }) {
+  const [nativeVersion, setNativeVersion] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isAndroidApp()) return;
+    let active = true;
+    void App.getInfo().then(info => { if (active) setNativeVersion(info.version); }).catch(() => {});
+    return () => { active = false; };
+  }, []);
   const { latest, checking, installing, percent, message, available } = updates;
   const incompatible = latest && latest.runtimeVersion !== release.runtimeVersion;
   return <section className="updates-content">
-    <p className="panel-intro">Установлена версия {release.versionName}</p>
+    <p className="panel-intro">Контент: {release.versionName}{nativeVersion && ` · APK: ${nativeVersion}`}<br />Обновления: GitHub</p>
     {available && latest ? <>
       <h3>Новая версия {latest.versionName}</h3>
       <ul className="patch-notes">{latest.notes.map(note => <li key={note}>{note}</li>)}</ul>
@@ -73,5 +81,8 @@ export function UpdatePanel({ updates }: { updates: ReturnType<typeof useUpdates
     {updates.diagnostic && <details className="update-diagnostic"><summary>Причина ошибки</summary><p>{updates.diagnostic}</p><p>Если интернет работает, откройте этот адрес в браузере на том же телефоне:</p><a href={release.updateManifestUrl} target="_blank" rel="noreferrer">Проверить доступность сервера GitHub</a></details>}
     <button className="text-button" disabled={checking || installing} onClick={() => void updates.check()}>{checking ? "Проверяю…" : "Проверить обновления"}</button>
     <p className="panel-footnote">Игра работает без интернета. Сеть нужна только для проверки и загрузки обновлений. Прогресс никуда не отправляется.</p>
+    <section className="release-history" aria-label="История обновлений"><h3>Все версии</h3>
+      {[release, ...releaseHistory].map(item => <details key={item.versionName}><summary>{item.versionName} {item.versionName === release.versionName && <small>· установлена</small>}</summary><ul className="patch-notes">{item.notes.map(note => <li key={note}>{note}</li>)}</ul></details>)}
+    </section>
   </section>;
 }

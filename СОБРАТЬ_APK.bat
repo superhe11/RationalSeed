@@ -16,6 +16,8 @@ set "ANDROID_SDK_ROOT=%ANDROID_HOME%"
 echo Собираю Android-приложение...
 call npm run android:apk
 if errorlevel 1 goto :error
+powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\verify-apk.ps1" -ApkPath "android\app\build\outputs\apk\release\app-release.apk"
+if errorlevel 1 goto :error
 
 copy /y "android\app\build\outputs\apk\release\app-release.apk" "Рациональное_зерно.apk" >nul
 if errorlevel 1 goto :error

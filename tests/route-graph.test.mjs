@@ -23,3 +23,16 @@ test("one horizontal graph includes every scene, answer and ending with no overl
     else for (const ending of Object.keys(endingNodes)) assert.ok(graph.edges.some(edge => edge.from === id && edge.to === `ending:${ending}`));
   });
 });
+
+test("compact tree retains all paths, reduces width and has non-overlapping touch targets", () => {
+  const desktop = buildRouteGraph(); const mobile = buildRouteGraph(true);
+  assert.deepEqual(mobile.edges, desktop.edges);
+  assert.deepEqual(new Set(mobile.nodes.map(node => node.id)), new Set(desktop.nodes.map(node => node.id)));
+  assert.ok(mobile.width < desktop.width * .8);
+  assert.ok(mobile.nodeHeight * .65 >= 44);
+  assert.ok((mobile.nodeWidth * 2 + 40) * .85 <= 360);
+  for (const node of mobile.nodes) {
+    assert.ok(node.x + mobile.nodeWidth <= mobile.width && node.y + mobile.nodeHeight <= mobile.height);
+    for (const other of mobile.nodes) if (other !== node) assert.ok(Math.abs(node.x - other.x) >= mobile.nodeWidth || Math.abs(node.y - other.y) >= mobile.nodeHeight);
+  }
+});
