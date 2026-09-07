@@ -283,7 +283,7 @@ export default function Home() {
             <button className="text-button" disabled={!ready} onClick={() => setPanel("achievements")}>Достижения · {unlockedAchievements(library).length}/{achievements.length}</button>
             <button className="text-button" disabled={!ready} onClick={() => setPanel("map")}>Карта выборов</button>
             <button className="text-button" onClick={() => setPanel("updates")}>Версия {release.versionName}{updates.available ? " · новая версия" : ""}</button>
-            {library.auto && <button className="text-button" onClick={() => setPanel("menu")}>Новая игра</button>}
+            {library.auto && <button className="text-button" onClick={reset}>Новая игра</button>}
           </div>
           <div className="title-meta">
             <span>{mainChapterCount} глав + пролог</span><span>{branchCount} развилок</span>
@@ -342,7 +342,7 @@ export default function Home() {
             ) : isEnding ? (
               <div className="ending-actions">
                 <button className="primary-button" onClick={() => setPanel("endings")}>Концовки · {library.unlocked.length}/{Object.keys(endingNodes).length}</button>
-                <button className="text-button" onClick={() => setPanel("menu")}>Новая игра</button>
+                <button className="text-button" onClick={reset}>Новая игра</button>
                 <button className="text-button" onClick={() => setStarted(false)}>На титульный экран</button>
               </div>
             ) : (
