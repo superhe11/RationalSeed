@@ -3,6 +3,12 @@ name: Build Release Assets
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Тег релиза'
+        required: true
+        default: 'v2.1.4'
 
 permissions:
   contents: write
@@ -41,8 +47,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk "RationalSeed-${{ github.event.release.tag_name }}.apk"
-          gh release upload ${{ github.event.release.tag_name }} "RationalSeed-${{ github.event.release.tag_name }}.apk" --clobber
+          TAG="${{ github.event.release.tag_name || inputs.tag_name }}"
+          cp android/app/build/outputs/apk/release/app-release.apk "RationalSeed-${TAG}.apk"
+          gh release upload "$TAG" "RationalSeed-${TAG}.apk" --clobber
 
   build-desktop:
     strategy:
@@ -68,14 +75,16 @@ jobs:
         run: npm run mobile:web
 
       - name: Package Desktop App
-        run: npx electron-builder
+        run: npx electron-builder --publish never
 
       - name: Upload Desktop Assets to Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          for file in dist-pc/*.{exe,AppImage,dmg,zip}; do
+          TAG="${{ github.event.release.tag_name || inputs.tag_name }}"
+          cd dist-pc
+          for file in *.exe *.AppImage *.dmg *.zip; do
             if [ -f "$file" ]; then
-              gh release upload ${{ github.event.release.tag_name }} "$file" --clobber
+              gh release upload "$TAG" "$file" --clobber
             fi
           done
