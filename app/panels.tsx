@@ -48,11 +48,36 @@ export function GamePanel(props: Props) {
         <p>{confirmation.text}</p><div className="panel-actions"><button className="primary-button" onClick={() => { confirmation.run(); setConfirmation(null); }}>Подтвердить</button><button className="text-button" onClick={() => setConfirmation(null)}>Отмена</button></div>
       </section> : <>
         {props.panel === "menu" && <div className="menu-actions">
-          <button className="text-button menu-return" onClick={props.onClose}>← К игре</button>
-          <button onClick={props.onSound} aria-pressed={props.soundOn}>Звук: {props.soundOn ? "включён" : "выключен"}</button>
-          <button onClick={props.onHud} aria-pressed={props.showHud}>Шкалы: {props.showHud ? "видны" : "скрыты"}</button>
-          <button onClick={props.onTitle}>На титульный экран</button>
-          <button onClick={() => setConfirmation({ text: "Начать заново? Автосейв заменится, но ручные сохранения и открытые концовки останутся.", run: props.onReset })}>Начать новую игру</button>
+          <button className="primary-button menu-btn-resume" onClick={props.onClose}>
+            ← Вернуться к игре
+          </button>
+
+          <div className="menu-toggles-row">
+            <button className="menu-toggle-btn" onClick={props.onSound} aria-pressed={props.soundOn}>
+              <span className="toggle-icon">{props.soundOn ? "●" : "○"}</span>
+              <span>Звук: {props.soundOn ? "вкл" : "выкл"}</span>
+            </button>
+            <button className="menu-toggle-btn" onClick={props.onHud} aria-pressed={props.showHud}>
+              <span className="toggle-icon">{props.showHud ? "●" : "○"}</span>
+              <span>Шкалы: {props.showHud ? "видны" : "скрыты"}</span>
+            </button>
+          </div>
+
+          <div className="menu-divider" />
+
+          <div className="menu-bottom-actions">
+            <button className="menu-btn-title" onClick={props.onTitle}>
+              <span className="btn-symbol">⌂</span>
+              <span>На титульный экран</span>
+            </button>
+            <button 
+              className="menu-btn-reset" 
+              onClick={() => setConfirmation({ text: "Начать заново? Автосейв заменится, но ручные сохранения и открытые концовки останутся.", run: props.onReset })}
+            >
+              <span className="btn-symbol">↻</span>
+              <span>Начать новую игру</span>
+            </button>
+          </div>
         </div>}
         {props.panel === "saves" && <>
           <article className="save-slot"><h3>Автосохранение</h3><SaveDescription save={props.library.auto} />{props.library.auto && <button className="text-button" onClick={() => load(props.library.auto!)}>Загрузить автосохранение</button>}</article>
