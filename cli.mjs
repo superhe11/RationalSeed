@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import readline from 'node:readline/promises';
+import * as readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 import { spawn, spawnSync, execSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -9,10 +9,8 @@ import os from 'node:os';
 const NOVEL_URL = 'http://127.0.0.1:38741/';
 const NOVEL_FALLBACK_URL = 'http://127.0.0.1:3000/';
 
-
 function printHeader() {
-  console.clear();
-  console.log('====================================================');
+  console.log('\n====================================================');
   console.log('       Управление проектом — Рациональное зерно     ');
   console.log('====================================================');
   console.log(' 1. Открыть новеллу (запуск сервера)');
@@ -35,9 +33,7 @@ function openBrowser(url) {
 }
 
 function getPowerShellCmd() {
-  if (process.platform === 'win32') {
-    return 'powershell';
-  }
+  if (process.platform === 'win32') return 'powershell';
   try {
     execSync('which pwsh', { stdio: 'ignore' });
     return 'pwsh';
@@ -49,29 +45,24 @@ function getPowerShellCmd() {
 function runPowerShellScript(scriptRelPath, args = []) {
   const pwsh = getPowerShellCmd();
   if (!pwsh) {
-    console.error('\n[Ошибка] На этой системе не найден PowerShell (pwsh).');
-    console.error('Для запуска .ps1 скриптов на Linux установите PowerShell Core: sudo apt install powershell');
-    return false;
+    return null;
   }
 
   const scriptPath = path.resolve(scriptRelPath);
   const psArgs = ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath, ...args];
-
   const res = spawnSync(pwsh, psArgs, { stdio: 'inherit' });
   return res.status === 0;
 }
 
-
 async function taskOpenNovel() {
   console.log('\nПроверка запущенного сервера...');
-
   for (const url of [NOVEL_URL, NOVEL_FALLBACK_URL]) {
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
       if (res.ok) {
         const body = await res.text();
         if (body.includes('title-screen')) {
-          console.log(`Сервер уже активен на ${url}. Открываю в браузере...`);
+          console.log(`Сервер уже активен на ${url}. Открываю браузер...`);
           openBrowser(url);
           return;
         }
@@ -81,18 +72,18 @@ async function taskOpenNovel() {
 
   if (!fs.existsSync(path.join('node_modules', '.bin'))) {
     console.log('Первый запуск: установка компонентов (npm install)...');
-    const install = spawnSync('npm', ['install'], { stdio: 'inherit', shell: true });
+    const install = spawnSync('npm install', { stdio: 'inherit', shell: true });
     if (install.status !== 0) {
-      console.error('Ошибка при установке npm-пакетов.');
+      console.error('Ошибка npm install.');
       return;
     }
   }
 
   if (!fs.existsSync(path.join('dist', 'server', 'index.js'))) {
     console.log('Сборка проекта (npm run build)...');
-    const build = spawnSync('npm', ['run', 'build'], { stdio: 'inherit', shell: true });
+    const build = spawnSync('npm run build', { stdio: 'inherit', shell: true });
     if (build.status !== 0) {
-      console.error('Ошибка при сборке проекта.');
+      console.error('Ошибка сборки проекта.');
       return;
     }
   }
@@ -101,10 +92,10 @@ async function taskOpenNovel() {
   console.log('Окно браузера откроется автоматически.');
   console.log('Нажмите Ctrl+C, чтобы остановить сервер и вернуться в меню.\n');
 
-  const server = spawn('npx', ['vinext', 'start', '--host', '127.0.0.1', '--port', '38741', '--strictPort'], {
-    stdio: 'inherit',
-    shell: true
-  });
+  const isWin = process.platform === 'win32';
+  const server = isWin
+    ? spawn('npx vinext start --host 127.0.0.1 --port 38741 --strictPort', { stdio: 'inherit', shell: true })
+    : spawn('npx', ['vinext', 'start', '--host', '127.0.0.1', '--port', '38741', '--strictPort'], { stdio: 'inherit' });
 
   (async () => {
     for (let i = 0; i < 120; i++) {
@@ -122,29 +113,27 @@ async function taskOpenNovel() {
 
   await new Promise((resolve) => {
     server.on('close', resolve);
-    process.on('SIGINT', () => {
-      server.kill('SIGINT');
-    });
+    process.on('SIGINT', () => server.kill('SIGINT'));
   });
 }
 
 function taskPrepareUpdate() {
   console.log('\nПодготовка обновления...');
-  const ok = runPowerShellScript(path.join('scripts', 'prepare-update.ps1'));
-  if (ok) {
-    console.log('\nОбновление подготовлено. Теперь нужно опубликовать сайт обновлений.');
-  } else {
-    console.error('\nНе удалось подготовить обновление.');
+  const res = runPowerShellScript(path.join('scripts', 'prepare-update.ps1'));
+  if (res === null) {
+    console.error('\n[Ошибка] Для этого действия требуется PowerShell (pwsh). Установите его в Linux.');
+  } else if (res) {
+    console.log('\nОбновление подготовлено.');
   }
 }
 
 function taskPublishUpdate() {
   console.log('\nПубликация обновления в GitHub...');
-  const ok = runPowerShellScript(path.join('scripts', 'publish-github.ps1'));
-  if (ok) {
+  const res = runPowerShellScript(path.join('scripts', 'publish-github.ps1'));
+  if (res === null) {
+    console.error('\n[Ошибка] Для этого действия требуется PowerShell (pwsh). Установите его в Linux.');
+  } else if (res) {
     console.log('\nОбновление опубликовано в GitHub.');
-  } else {
-    console.error('\nПубликация не завершена. Проверьте сообщения об ошибках выше.');
   }
 }
 
@@ -152,12 +141,9 @@ function taskBuildApk() {
   console.log('\nСборка Android APK — Рациональное зерно');
 
   if (!fs.existsSync(path.join('node_modules', '@capacitor', 'cli'))) {
-    console.log('Установка компонентов сборки...');
-    const inst = spawnSync('npm', ['install'], { stdio: 'inherit', shell: true });
-    if (inst.status !== 0) {
-      console.error('Не удалось установить зависимости.');
-      return;
-    }
+    console.log('Установка компонентов...');
+    const inst = spawnSync('npm install', { stdio: 'inherit', shell: true });
+    if (inst.status !== 0) return;
   }
 
   if (!process.env.ANDROID_HOME && !process.env.ANDROID_SDK_ROOT) {
@@ -169,35 +155,60 @@ function taskBuildApk() {
     process.env.ANDROID_SDK_ROOT = process.env.ANDROID_HOME;
   }
 
-  console.log('Сборка APK...');
-  const build = spawnSync('npm', ['run', 'android:apk'], {
-    stdio: 'inherit',
-    shell: true,
-    env: process.env
-  });
-
-  if (build.status !== 0) {
-    console.error('Ошибка при выполнении "npm run android:apk".');
+  console.log('\n[1/3] Синхронизация ассетов (mobile:sync)...');
+  const sync = spawnSync('npm run mobile:sync', { stdio: 'inherit', shell: true, env: process.env });
+  if (sync.status !== 0) {
+    console.error('Ошибка на этапе mobile:sync.');
     return;
   }
 
+  console.log('\n[2/3] Компиляция APK через Gradle...');
+  const isWin = process.platform === 'win32';
+  const androidDir = path.resolve('android');
+
+  if (!isWin) {
+    const gradlewPath = path.join(androidDir, 'gradlew');
+    try {
+      fs.chmodSync(gradlewPath, 0o755);
+    } catch (err) {
+      console.warn('Предупреждение: не удалось выставить права chmod на gradlew:', err.message);
+    }
+  }
+
+  const gradlewCmd = isWin ? 'gradlew.bat' : './gradlew';
+  const gradle = isWin
+    ? spawnSync('gradlew.bat assembleRelease', { cwd: androidDir, stdio: 'inherit', shell: true, env: process.env })
+    : spawnSync('./gradlew', ['assembleRelease'], { cwd: androidDir, stdio: 'inherit', env: process.env });
+
+  if (gradle.status !== 0) {
+    console.error('\nОшибка компиляции Gradle. Проверьте установку JDK и Android SDK.');
+    return;
+  }
+
+  console.log('\n[3/3] Завершение сборки...');
   const apkRelPath = path.join('android', 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk');
 
-  const verified = runPowerShellScript(path.join('scripts', 'verify-apk.ps1'), ['-ApkPath', apkRelPath]);
-  if (!verified) {
-    console.error('Верификация APK завершилась с ошибкой.');
+  if (!fs.existsSync(apkRelPath)) {
+    console.error(`Файл APK не найден по пути: ${apkRelPath}`);
     return;
+  }
+
+  const verified = runPowerShellScript(path.join('scripts', 'verify-apk.ps1'), ['-ApkPath', apkRelPath]);
+  if (verified === false) {
+    console.error('Верификация через verify-apk.ps1 завершилась с ошибкой.');
+    return;
+  } else if (verified === null) {
+    console.log('(PowerShell не найден, верификация контрольной суммы пропущена)');
   }
 
   try {
     const targetApk = 'Рациональное_зерно.apk';
     fs.copyFileSync(apkRelPath, targetApk);
-    console.log(`\nГотово: ${path.resolve(targetApk)}`);
+    console.log(`\nУспешно! APK собран: ${path.resolve(targetApk)}`);
   } catch (err) {
-    console.error('Не удалось скопировать APK-файл:', err.message);
+    console.error('Ошибка копирования APK:', err.message);
   }
 }
-
 
 async function main() {
   const rl = readline.createInterface({ input, output });
@@ -207,24 +218,16 @@ async function main() {
     const answer = (await rl.question('Выберите пункт [0-4]: ')).trim();
 
     switch (answer) {
-      case '1':
-        await taskOpenNovel();
-        break;
-      case '2':
-        taskPrepareUpdate();
-        break;
-      case '3':
-        taskPublishUpdate();
-        break;
-      case '4':
-        taskBuildApk();
-        break;
+      case '1': await taskOpenNovel(); break;
+      case '2': taskPrepareUpdate(); break;
+      case '3': taskPublishUpdate(); break;
+      case '4': taskBuildApk(); break;
       case '0':
         console.log('Выход.');
         rl.close();
         process.exit(0);
       default:
-        console.log('Неверный ввод. Попробуйте снова.');
+        console.log('Неверный пункт. Попробуйте снова.');
         break;
     }
 
@@ -232,4 +235,6 @@ async function main() {
   }
 }
 
-main();
+main().catch((err) => {
+  console.error('Фатальная ошибка:', err);
+});
