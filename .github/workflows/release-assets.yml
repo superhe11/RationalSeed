@@ -1,0 +1,81 @@
+name: Build Release Assets
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Dependencies
+        run: npm ci || npm install
+
+      - name: Sync Mobile Project
+        run: npm run mobile:sync
+
+      - name: Build APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Upload APK to Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk "RationalSeed-${{ github.event.release.tag_name }}.apk"
+          gh release upload ${{ github.event.release.tag_name }} "RationalSeed-${{ github.event.release.tag_name }}.apk" --clobber
+
+  build-desktop:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci || npm install
+
+      - name: Build Web Bundle
+        run: npm run mobile:web
+
+      - name: Package Desktop App
+        run: npx electron-builder
+
+      - name: Upload Desktop Assets to Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for file in dist-pc/*.{exe,AppImage,dmg,zip}; do
+            if [ -f "$file" ]; then
+              gh release upload ${{ github.event.release.tag_name }} "$file" --clobber
+            fi
+          done

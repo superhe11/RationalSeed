@@ -2,6 +2,8 @@
   "name": "rational-seed-visual-novel",
   "version": "0.1.0",
   "private": true,
+  "main": "electron-main.cjs",
+  "type": "module",
   "engines": {
     "node": ">=22.13.0"
   },
@@ -15,7 +17,37 @@
     "mobile:web": "vite build --config vite.mobile.config.ts",
     "mobile:sync": "npm run mobile:web && cap sync android",
     "android:apk": "npm run mobile:sync && cd android && gradlew.bat assembleRelease",
+    "pack:pc": "npm run mobile:web && electron-builder",
     "db:generate": "drizzle-kit generate"
+  },
+  "build": {
+    "appId": "com.rationalseed.novel",
+    "productName": "RationalSeed",
+    "directories": {
+      "output": "dist-pc"
+    },
+    "files": [
+      "electron-main.cjs",
+      "dist-mobile/**/*"
+    ],
+    "win": {
+      "target": [
+        "portable",
+        "nsis"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "identity": null
+    }
   },
   "dependencies": {
     "@capacitor/android": "8.5.1",
@@ -39,6 +71,8 @@
     "@vitejs/plugin-react": "6.0.2",
     "@vitejs/plugin-rsc": "0.5.26",
     "drizzle-kit": "0.31.10",
+    "electron": "^44.2.0",
+    "electron-builder": "^26.15.3",
     "eslint": "9.39.4",
     "eslint-plugin-jsx-a11y": "6.10.2",
     "eslint-plugin-react": "7.37.5",
@@ -51,6 +85,5 @@
     "vinext": "1.0.0-beta.2",
     "vite": "8.0.13",
     "wrangler": "4.92.0"
-  },
-  "type": "module"
+  }
 }
