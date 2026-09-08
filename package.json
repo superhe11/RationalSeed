@@ -21,8 +21,9 @@
     "db:generate": "drizzle-kit generate"
   },
   "build": {
-    "appId": "com.rationalseed.novel",
-    "productName": "RationalSeed",
+  "appId": "com.rationalseed.novel",
+  "productName": "RationalSeed",
+  "icon": "public/icon.png",
     "directories": {
       "output": "dist-pc"
     },
